@@ -96,10 +96,23 @@ pub const INCOME_CATEGORIES: &[&str] = &[
     "Lainnya",
 ];
 
+#[allow(dead_code)]
 pub const STORAGE_KEY: &str = "catatmoney_transactions_v2";
+#[allow(dead_code)]
 pub const THEME_KEY: &str = "catatmoney_theme_mode";
+#[allow(dead_code)]
 pub const STORAGE_KEY_WALLETS: &str = "catatmoney_wallets_v1";
+#[allow(dead_code)]
 pub const STORAGE_KEY_CATEGORIES: &str = "catatmoney_categories_v1";
+#[allow(dead_code)]
+pub const STORAGE_KEY_PROFILE: &str = "catatmoney_profile_v1";
+
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct UserProfile {
+    pub name: String,
+    pub is_onboarded: bool,
+}
+
 
 /// Format nominal ke format mata uang Rupiah Indonesia (contoh: Rp 50.000)
 pub fn format_idr(amount: f64) -> String {
@@ -197,6 +210,52 @@ pub fn get_current_time() -> String {
     }
 }
 
+/// Memuat profil pengguna dari LocalStorage browser
+pub fn load_profile() -> Option<UserProfile> {
+    #[cfg(target_arch = "wasm32")]
+    {
+        if let Some(window) = web_sys::window() {
+            if let Ok(Some(storage)) = window.local_storage() {
+                if let Ok(Some(raw_json)) = storage.get_item(STORAGE_KEY_PROFILE) {
+                    if let Ok(profile) = serde_json::from_str::<UserProfile>(&raw_json) {
+                        return Some(profile);
+                    }
+                }
+            }
+        }
+    }
+    None
+}
+
+/// Menyimpan profil pengguna ke LocalStorage browser
+pub fn save_profile(_profile: &UserProfile) {
+    #[cfg(target_arch = "wasm32")]
+    {
+        if let Some(window) = web_sys::window() {
+            if let Ok(Some(storage)) = window.local_storage() {
+                if let Ok(raw_json) = serde_json::to_string(_profile) {
+                    let _ = storage.set_item(STORAGE_KEY_PROFILE, &raw_json);
+                }
+            }
+        }
+    }
+}
+
+/// Menghapus seluruh data aplikasi (transaksi, sumber dana, kategori, dan profil)
+pub fn reset_all_data() {
+    #[cfg(target_arch = "wasm32")]
+    {
+        if let Some(window) = web_sys::window() {
+            if let Ok(Some(storage)) = window.local_storage() {
+                let _ = storage.remove_item(STORAGE_KEY);
+                let _ = storage.remove_item(STORAGE_KEY_WALLETS);
+                let _ = storage.remove_item(STORAGE_KEY_CATEGORIES);
+                let _ = storage.remove_item(STORAGE_KEY_PROFILE);
+            }
+        }
+    }
+}
+
 /// Memuat transaksi dari LocalStorage browser
 pub fn load_transactions() -> Vec<Transaction> {
     #[cfg(target_arch = "wasm32")]
@@ -226,8 +285,9 @@ pub fn load_transactions() -> Vec<Transaction> {
         }
     }
 
-    get_starter_transactions()
+    vec![]
 }
+
 
 /// Menyimpan data transaksi ke LocalStorage browser
 pub fn save_transactions(_transactions: &[Transaction]) {
@@ -288,6 +348,7 @@ pub fn format_short_date(date_str: &str) -> String {
     }
 }
 
+#[allow(dead_code)]
 pub fn get_default_wallets() -> Vec<Wallet> {
     vec![
         Wallet {
@@ -318,15 +379,13 @@ pub fn load_wallets() -> Vec<Wallet> {
             if let Ok(Some(storage)) = window.local_storage() {
                 if let Ok(Some(raw_json)) = storage.get_item(STORAGE_KEY_WALLETS) {
                     if let Ok(wallets) = serde_json::from_str::<Vec<Wallet>>(&raw_json) {
-                        if !wallets.is_empty() {
-                            return wallets;
-                        }
+                        return wallets;
                     }
                 }
             }
         }
     }
-    get_default_wallets()
+    vec![]
 }
 
 pub fn save_wallets(_wallets: &[Wallet]) {
@@ -392,6 +451,7 @@ pub fn calculate_wallet_balance(wallet: &Wallet, transactions: &[Transaction]) -
 }
 
 /// Data starter awal untuk mendemokan fitur baru (timestamp detik, lampiran, dan sumber dana)
+#[allow(dead_code)]
 fn get_starter_transactions() -> Vec<Transaction> {
     vec![
         Transaction {
@@ -458,12 +518,15 @@ pub struct CatatMoneyBackup {
     pub version: u32,
     pub app: String,
     pub exported_at: String,
+    #[serde(default)]
+    pub profile: Option<UserProfile>,
     pub transactions: Vec<Transaction>,
     pub wallets: Vec<Wallet>,
     pub categories: UserCategories,
 }
 
 pub fn create_backup(
+    profile: Option<&UserProfile>,
     transactions: &[Transaction],
     wallets: &[Wallet],
     categories: &UserCategories,
@@ -472,6 +535,7 @@ pub fn create_backup(
         version: 1,
         app: "CatatMoney".to_string(),
         exported_at: format!("{} {} WIB", get_today_date(), get_current_time()),
+        profile: profile.cloned(),
         transactions: transactions.to_vec(),
         wallets: wallets.to_vec(),
         categories: categories.clone(),

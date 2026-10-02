@@ -4,9 +4,10 @@ use crate::components::icons::{
     IconCreditCard, IconDownload, IconEdit, IconLandmark, IconPlus, IconSliders, IconSmartphone,
     IconTrash, IconUpload, IconWallet, IconX, WalletIcon,
 };
+#[allow(unused_imports)]
 use crate::model::{
     create_backup, generate_id, get_today_date, trigger_json_download, CatatMoneyBackup,
-    Transaction, TransactionType, UserCategories, Wallet, WalletType,
+    Transaction, TransactionType, UserCategories, UserProfile, Wallet, WalletType,
 };
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
@@ -19,6 +20,7 @@ pub enum ManageTab {
 
 #[component]
 pub fn ManagementView(
+    profile: Option<UserProfile>,
     transactions: Vec<Transaction>,
     wallets: Vec<Wallet>,
     categories: UserCategories,
@@ -26,7 +28,8 @@ pub fn ManagementView(
     on_update_categories: EventHandler<UserCategories>,
     on_request_delete_wallet: EventHandler<String>,
     on_request_delete_category: EventHandler<(TransactionType, String)>,
-    on_restore_data: EventHandler<(Vec<Transaction>, Vec<Wallet>, UserCategories)>,
+    on_restore_data: EventHandler<(Option<UserProfile>, Vec<Transaction>, Vec<Wallet>, UserCategories)>,
+    on_request_reset_all_data: EventHandler<()>,
 ) -> Element {
     let mut active_subtab = use_signal(|| ManageTab::Wallets);
 
@@ -536,6 +539,7 @@ pub fn ManagementView(
                     let trxs_clone = transactions.clone();
                     let wallets_clone = wallets.clone();
                     let cats_clone = categories.clone();
+                    let profile_clone = profile.clone();
 
                     rsx! {
                         div { class: "manage-section",
@@ -580,7 +584,7 @@ pub fn ManagementView(
                                             r#type: "button",
                                             class: "btn-primary text-xs py-2 px-4 flex items-center gap-2",
                                             onclick: move |_| {
-                                                let backup = create_backup(&trxs_clone, &wallets_clone, &cats_clone);
+                                                let backup = create_backup(profile_clone.as_ref(), &trxs_clone, &wallets_clone, &cats_clone);
                                                 if let Ok(json_str) = serde_json::to_string_pretty(&backup) {
                                                     let filename = format!("catatmoney_backup_{}.json", get_today_date());
                                                     trigger_json_download(&filename, &json_str);
@@ -642,7 +646,7 @@ pub fn ManagementView(
                                                                                                     let w_len = backup.wallets.len();
                                                                                                     status_signal.set(Some(format!("Berhasil memulihkan {} transaksi dan {} sumber dana!", t_len, w_len)));
                                                                                                     error_signal.set(None);
-                                                                                                    restore_cb.call((backup.transactions, backup.wallets, backup.categories));
+                                                                                                    restore_cb.call((backup.profile, backup.transactions, backup.wallets, backup.categories));
                                                                                                 }
                                                                                                 Err(_) => {
                                                                                                     error_signal.set(Some("Format berkas JSON tidak sesuai struktur data cadangan CatatMoney.".to_string()));
@@ -664,6 +668,30 @@ pub fn ManagementView(
                                                     }
                                                 }
                                             }
+                                        }
+                                    }
+                                }
+
+                                // Card 3: Zona Bahaya - Reset Aplikasi (Hapus Semua Data)
+                                div { class: "p-5 rounded-xl border border-red-500/30 bg-red-950/10 dark:border-red-900/40 dark:bg-red-950/20 flex flex-col justify-between md:col-span-2",
+                                    div { class: "flex flex-col sm:flex-row sm:items-center justify-between gap-4",
+                                        div { class: "flex items-start gap-3.5",
+                                            div { class: "w-9 h-9 rounded-lg bg-red-500/10 border border-red-500/20 flex items-center justify-center text-red-500 dark:text-red-400 shrink-0 mt-0.5",
+                                                IconTrash { size: "18" }
+                                            }
+                                            div {
+                                                h4 { class: "text-sm font-bold text-red-500 dark:text-red-400", "Zona Bahaya: Reset Aplikasi (Hapus Semua Data)" }
+                                                p { class: "text-xs text-[var(--text-secondary)] mt-1 max-w-xl leading-relaxed",
+                                                    "Hapus secara permanen seluruh catatan transaksi, pos sumber dana, kategori kustom, dan profil pengguna dari peramban ini. Aplikasi akan kembali bersih ke panduan setup awal (Getting Started)."
+                                                }
+                                            }
+                                        }
+                                        button {
+                                            r#type: "button",
+                                            class: "btn-danger-outline text-xs py-2 px-4 shrink-0 flex items-center justify-center gap-2",
+                                            onclick: move |_| on_request_reset_all_data.call(()),
+                                            IconAlertTriangle { size: "14" }
+                                            "Reset Semua Data"
                                         }
                                     }
                                 }

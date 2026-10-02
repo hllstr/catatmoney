@@ -9,6 +9,7 @@ use std::collections::HashMap;
 
 #[component]
 pub fn MainDashboard(
+    user_name: String,
     transactions: Vec<Transaction>,
     wallets: Vec<Wallet>,
     on_go_to_history: EventHandler<()>,
@@ -22,7 +23,8 @@ pub fn MainDashboard(
             TransactionType::Expense => (acc.0, acc.1 + t.amount),
         }
     });
-    let total_balance = total_income - total_expense;
+    // Total saldo bersih dihitung dari seluruh pos saldo sumber dana yang aktif
+    let total_balance: f64 = wallets.iter().map(|w| calculate_wallet_balance(w, &transactions)).sum();
 
     // Breakdown Pengeluaran per Kategori
     let mut category_expense: HashMap<String, f64> = HashMap::new();
@@ -38,6 +40,18 @@ pub fn MainDashboard(
 
     rsx! {
         div { class: "dashboard-container",
+            // 0. Greeting Header Personal
+            div { class: "greeting-banner mb-6 p-4 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-card)] flex flex-col sm:flex-row sm:items-center justify-between gap-3",
+                div {
+                    div { class: "inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[var(--bg-hover)] border border-[var(--border-subtle)] text-[11px] font-semibold text-[var(--text-secondary)] mb-1.5",
+                        span { class: "w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block" }
+                        span { "Finansial Personal" }
+                    }
+                    h2 { class: "text-lg font-bold text-[var(--text-primary)] tracking-tight", "Halo, {user_name}" }
+                    p { class: "text-xs text-[var(--text-secondary)] mt-0.5", "Berikut ringkasan arus kas dan posisi saldo seluruh akun keuangan Anda." }
+                }
+            }
+
             // 1. Top Cards Ringkasan Keuangan
             Summary {
                 balance: total_balance,
@@ -159,52 +173,63 @@ pub fn MainDashboard(
                     }
                 }
 
-                div { class: "transaction-feed",
-                    for trx in recent_transactions {
-                        {
-                            let is_income = trx.transaction_type == TransactionType::Income;
-                            let amount_str = if is_income {
-                                format!("+{}", format_idr(trx.amount))
-                            } else {
-                                format!("-{}", format_idr(trx.amount))
-                            };
-                            let amount_class = if is_income {
-                                "row-amount tabular-numbers positive"
-                            } else {
-                                "row-amount tabular-numbers negative"
-                            };
-                            let box_class = if is_income {
-                                "category-icon-box income"
-                            } else {
-                                "category-icon-box expense"
-                            };
+                if recent_transactions.is_empty() {
+                    div { class: "feed-empty", style: "padding: 2.5rem 1rem;",
+                        div { class: "feed-empty-icon mb-2 flex justify-center text-[var(--text-muted)]",
+                            IconReceipt { size: "24" }
+                        }
+                        p { class: "feed-empty-text text-xs text-[var(--text-secondary)] max-w-sm mx-auto text-center leading-relaxed",
+                            "Belum ada transaksi tercatat. Tekan tombol (+) di bilah navigasi bawah untuk mencatat transaksi pertama Anda."
+                        }
+                    }
+                } else {
+                    div { class: "transaction-feed",
+                        for trx in recent_transactions {
+                            {
+                                let is_income = trx.transaction_type == TransactionType::Income;
+                                let amount_str = if is_income {
+                                    format!("+{}", format_idr(trx.amount))
+                                } else {
+                                    format!("-{}", format_idr(trx.amount))
+                                };
+                                let amount_class = if is_income {
+                                    "row-amount tabular-numbers positive"
+                                } else {
+                                    "row-amount tabular-numbers negative"
+                                };
+                                let box_class = if is_income {
+                                    "category-icon-box income"
+                                } else {
+                                    "category-icon-box expense"
+                                };
 
-                            rsx! {
-                                div {
-                                    class: "transaction-row",
-                                    key: "{trx.id}",
-                                    onclick: {
-                                        let t = trx.clone();
-                                        move |_| on_select_trx.call(t.clone())
-                                    },
-                                    div { class: "row-left",
-                                        div { class: "{box_class}",
-                                            CategoryIcon { category: trx.category.clone() }
-                                        }
-                                        div { class: "row-details",
-                                            span { class: "row-title", "{trx.title}" }
-                                            div { class: "row-meta",
-                                                span { class: "meta-category", "{trx.category}" }
-                                                span { "•" }
-                                                span { "{trx.date}" }
-                                                span { "•" }
-                                                span { class: "tabular-numbers", "{trx.time}" }
+                                rsx! {
+                                    div {
+                                        class: "transaction-row",
+                                        key: "{trx.id}",
+                                        onclick: {
+                                            let t = trx.clone();
+                                            move |_| on_select_trx.call(t.clone())
+                                        },
+                                        div { class: "row-left",
+                                            div { class: "{box_class}",
+                                                CategoryIcon { category: trx.category.clone() }
+                                            }
+                                            div { class: "row-details",
+                                                span { class: "row-title", "{trx.title}" }
+                                                div { class: "row-meta",
+                                                    span { class: "meta-category", "{trx.category}" }
+                                                    span { "•" }
+                                                    span { "{trx.date}" }
+                                                    span { "•" }
+                                                    span { class: "tabular-numbers", "{trx.time}" }
+                                                }
                                             }
                                         }
-                                    }
 
-                                    div { class: "row-right",
-                                        span { class: "{amount_class}", "{amount_str}" }
+                                        div { class: "row-right",
+                                            span { class: "{amount_class}", "{amount_str}" }
+                                        }
                                     }
                                 }
                             }
