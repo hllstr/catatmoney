@@ -1,0 +1,19 @@
+{
+  "name": "CatatMoney",
+  "short_name": "CatatMoney",
+  "description": "Financial Cashflow & Expense Intelligence",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#09090b",
+  "theme_color": "#09090b",
+  "icons": [
+    {
+      "src": "./icon.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

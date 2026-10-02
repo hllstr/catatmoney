@@ -1,0 +1,26 @@
+[application]
+name = "catatmoney"
+default_platform = "web"
+out_dir = "dist"
+asset_dir = "assets"
+public_dir = "assets"
+
+[web.app]
+title = "CatatMoney - Financial Cashflow & Expense Intelligence"
+base_path = "./"
+
+[web.wasm_opt]
+level = "4"
+
+[web.watcher]
+index_on_404 = true
+watch_path = ["src", "assets"]
+
+[bundle]
+identifier = "com.hllstr.catatmoney"
+publisher = "hllstr"
+category = "Finance"
+short_description = "Aplikasi Catat Uang & Inteligensi Finansial Personal"
+long_description = """
+CatatMoney adalah aplikasi pencatatan keuangan pribadi minimalis, elegan, dan berbasis monokromatik Swiss FinTech yang mengutamakan privasi dan kecepatan.
+"""

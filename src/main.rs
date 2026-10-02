@@ -1,0 +1,404 @@
+use dioxus::prelude::*;
+
+mod components;
+mod model;
+
+use components::bottom_nav::{BottomNavBar, NavTab};
+use components::calendar::FinancialCalendar;
+use components::confirm_modal::ConfirmModal;
+use components::dashboard::MainDashboard;
+use components::detail_modal::DetailModal;
+use components::form_modal::TransactionModal;
+use components::history::TransactionHistory;
+use components::icons::{IconMoon, IconSun, IconWallet};
+use components::management::ManagementView;
+use components::wallet_modal::WalletModal;
+use model::{
+    format_idr, load_categories, load_theme, load_transactions, load_wallets, save_categories,
+    save_theme, save_transactions, save_wallets, ThemeMode, Transaction, TransactionType,
+    UserCategories, Wallet,
+};
+
+const APP_STYLE: &str = include_str!("../assets/style.css");
+
+#[derive(Clone, Debug, PartialEq)]
+pub enum PendingDelete {
+    Transaction(Transaction),
+    Wallet(String),
+    Category { is_expense: bool, name: String },
+}
+
+fn main() {
+    launch(App);
+}
+
+#[allow(non_snake_case)]
+pub fn App() -> Element {
+    // State preferensi tema (Light / Dark Mode Monokromatik)
+    let mut theme = use_signal(load_theme);
+
+    // Sinkronisasi kelas 'dark' / 'light' pada elemen root HTML browser secara reaktif
+    use_effect(move || {
+        let _current_mode = *theme.read();
+        #[cfg(target_arch = "wasm32")]
+        {
+            if let Some(window) = web_sys::window() {
+                if let Some(doc) = window.document() {
+                    if let Some(html) = doc.document_element() {
+                        let class_list = html.class_list();
+                        match _current_mode {
+                            ThemeMode::Dark => {
+                                let _ = class_list.add_1("dark");
+                                let _ = class_list.remove_1("light");
+                            }
+                            ThemeMode::Light => {
+                                let _ = class_list.add_1("light");
+                                let _ = class_list.remove_1("dark");
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    });
+
+    // State transaksi (disinkronkan dengan LocalStorage)
+    let mut transactions = use_signal(load_transactions);
+
+    // State sumber dana / dompet (disinkronkan dengan LocalStorage)
+    let mut wallets = use_signal(load_wallets);
+
+    // State kategori (disinkronkan dengan LocalStorage)
+    let mut categories = use_signal(load_categories);
+
+    // State navigasi tab aktif (Dashboard, Kalender, Riwayat, Kelola)
+    let mut active_tab = use_signal(|| NavTab::Dashboard);
+
+    // State modal input transaksi (+)
+    let mut is_modal_open = use_signal(|| false);
+
+    // State modal tambah sumber dana
+    let mut is_wallet_modal_open = use_signal(|| false);
+
+    // State transaksi yang sedang diedit (jika mode edit aktif)
+    let mut editing_trx = use_signal(|| None::<Transaction>);
+
+    // State modal rincian transaksi (ketika item transaksi diklik)
+    let mut selected_detail_trx = use_signal(|| None::<Transaction>);
+
+    // State dialog konfirmasi hapus data
+    let mut pending_delete = use_signal(|| None::<PendingDelete>);
+
+    // Handler penyimpanan transaksi (menambah baru atau memperbarui hasil edit)
+    let handle_save = move |saved_trx: Transaction| {
+        let mut list = transactions.write();
+        if let Some(pos) = list.iter().position(|t| t.id == saved_trx.id) {
+            list[pos] = saved_trx;
+        } else {
+            list.insert(0, saved_trx);
+        }
+        save_transactions(&list);
+        editing_trx.set(None);
+        is_modal_open.set(false);
+    };
+
+    // Handler penambahan sumber dana baru
+    let handle_save_wallet = move |new_w: Wallet| {
+        let mut list = wallets.write();
+        list.push(new_w);
+        save_wallets(&list);
+        is_wallet_modal_open.set(false);
+    };
+
+    // Handler penambahan kategori kustom baru
+    let handle_add_category = move |(trx_t, cat_name): (TransactionType, String)| {
+        let mut cats = categories.write();
+        match trx_t {
+            TransactionType::Expense => {
+                if !cats.expense.contains(&cat_name) {
+                    cats.expense.push(cat_name);
+                }
+            }
+            TransactionType::Income => {
+                if !cats.income.contains(&cat_name) {
+                    cats.income.push(cat_name);
+                }
+            }
+        }
+        save_categories(&cats);
+    };
+
+    // Handler toggle tema Light / Dark
+    let toggle_theme = move |_| {
+        let next_theme = match *theme.read() {
+            ThemeMode::Dark => ThemeMode::Light,
+            ThemeMode::Light => ThemeMode::Dark,
+        };
+        theme.set(next_theme);
+        save_theme(next_theme);
+    };
+
+    let theme_class = match *theme.read() {
+        ThemeMode::Dark => "dark",
+        ThemeMode::Light => "light",
+    };
+
+    rsx! {
+        // Tailwind CSS & Google Fonts Plus Jakarta Sans dengan inisialisasi aman
+        script { src: "https://cdn.tailwindcss.com" }
+        script {
+            "if (typeof tailwind !== 'undefined') {{ tailwind.config = {{ darkMode: 'class', theme: {{ extend: {{ fontFamily: {{ sans: ['Plus Jakarta Sans', 'sans-serif'] }} }} }} }}; }} else {{ window.addEventListener('load', function() {{ if (typeof tailwind !== 'undefined') tailwind.config = {{ darkMode: 'class', theme: {{ extend: {{ fontFamily: {{ sans: ['Plus Jakarta Sans', 'sans-serif'] }} }} }} }}; }}); }}"
+        }
+        document::Title { "CatatMoney - Financial Cashflow & Expense Intelligence" }
+        document::Meta { name: "description", content: "Aplikasi pencatatan keuangan pribadi minimalis, elegan, dan offline-first." }
+        document::Meta { name: "theme-color", content: "#09090b" }
+        document::Meta { name: "apple-mobile-web-app-capable", content: "yes" }
+        document::Meta { name: "apple-mobile-web-app-status-bar-style", content: "black-translucent" }
+        document::Meta { name: "apple-mobile-web-app-title", content: "CatatMoney" }
+        document::Link { rel: "manifest", href: "./manifest.json" }
+        document::Link { rel: "icon", r#type: "image/svg+xml", href: "./icon.svg" }
+        document::Link { rel: "apple-touch-icon", href: "./icon.svg" }
+        document::Link {
+            rel: "preconnect",
+            href: "https://fonts.googleapis.com",
+        }
+        document::Link {
+            rel: "preconnect",
+            href: "https://fonts.gstatic.com",
+            crossorigin: "true",
+        }
+        document::Link {
+            rel: "stylesheet",
+            href: "https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap",
+        }
+
+        // Sematkan stylesheet desain sistem monokromatik
+        style { "{APP_STYLE}" }
+
+        // Root container yang menerapkan class dark atau light dan menangani shortcut keyboard ESC
+        div {
+            class: "{theme_class} min-h-screen bg-[var(--bg-app)] text-[var(--text-primary)] transition-colors duration-200 outline-none",
+            tabindex: "0",
+            onkeydown: move |evt: KeyboardEvent| {
+                if evt.key() == Key::Escape {
+                    if pending_delete.read().is_some() {
+                        pending_delete.set(None);
+                    } else if *is_wallet_modal_open.read() {
+                        is_wallet_modal_open.set(false);
+                    } else if *is_modal_open.read() {
+                        is_modal_open.set(false);
+                        editing_trx.set(None);
+                    } else if selected_detail_trx.read().is_some() {
+                        selected_detail_trx.set(None);
+                    }
+                }
+            },
+            div { class: "app-wrapper",
+                // Header Aplikasi Monokromatik Minimalis
+                header { class: "app-header",
+                    div { class: "brand-section",
+                        div { class: "brand-icon-box",
+                            IconWallet { size: "18" }
+                        }
+                        div {
+                            h1 { class: "brand-title", "CatatMoney" }
+                            p { class: "brand-subtitle", "Financial Cashflow & Expense Intelligence" }
+                        }
+                    }
+
+                    div { class: "header-controls",
+                        // Tombol Toggle Tema (Light Mode / Dark Mode)
+                        button {
+                            r#type: "button",
+                            class: "theme-toggle-btn",
+                            onclick: toggle_theme,
+                            if *theme.read() == ThemeMode::Dark {
+                                IconSun { size: "14" }
+                                span { "Light Mode" }
+                            } else {
+                                IconMoon { size: "14" }
+                                span { "Dark Mode" }
+                            }
+                        }
+                    }
+                }
+
+                // Konten Berdasarkan Tab yang Aktif
+                main {
+                    match *active_tab.read() {
+                        NavTab::Dashboard => rsx! {
+                            MainDashboard {
+                                transactions: transactions.read().clone(),
+                                wallets: wallets.read().clone(),
+                                on_go_to_history: move |_| active_tab.set(NavTab::History),
+                                on_select_trx: move |trx| selected_detail_trx.set(Some(trx)),
+                                on_open_add_wallet: move |_| is_wallet_modal_open.set(true),
+                            }
+                        },
+                        NavTab::Calendar => rsx! {
+                            FinancialCalendar {
+                                transactions: transactions.read().clone(),
+                                on_delete: move |trx: Transaction| {
+                                    pending_delete.set(Some(PendingDelete::Transaction(trx)));
+                                },
+                                on_select_trx: move |trx| selected_detail_trx.set(Some(trx)),
+                            }
+                        },
+                        NavTab::History => rsx! {
+                            TransactionHistory {
+                                transactions: transactions.read().clone(),
+                                on_delete: move |trx: Transaction| {
+                                    pending_delete.set(Some(PendingDelete::Transaction(trx)));
+                                },
+                                on_select_trx: move |trx| selected_detail_trx.set(Some(trx)),
+                            }
+                        },
+                        NavTab::Management => rsx! {
+                            ManagementView {
+                                transactions: transactions.read().clone(),
+                                wallets: wallets.read().clone(),
+                                categories: categories.read().clone(),
+                                on_update_wallets: move |new_w_list: Vec<Wallet>| {
+                                    save_wallets(&new_w_list);
+                                    wallets.set(new_w_list);
+                                },
+                                on_update_categories: move |new_cats: UserCategories| {
+                                    save_categories(&new_cats);
+                                    categories.set(new_cats);
+                                },
+                                on_request_delete_wallet: move |w_name: String| {
+                                    pending_delete.set(Some(PendingDelete::Wallet(w_name)));
+                                },
+                                on_request_delete_category: move |(t_type, cat_name): (TransactionType, String)| {
+                                    pending_delete.set(Some(PendingDelete::Category {
+                                        is_expense: t_type == TransactionType::Expense,
+                                        name: cat_name,
+                                    }));
+                                },
+                                on_restore_data: move |(new_trxs, new_wallets, new_cats): (Vec<Transaction>, Vec<Wallet>, UserCategories)| {
+                                    save_transactions(&new_trxs);
+                                    transactions.set(new_trxs);
+                                    save_wallets(&new_wallets);
+                                    wallets.set(new_wallets);
+                                    save_categories(&new_cats);
+                                    categories.set(new_cats);
+                                },
+                            }
+                        },
+                    }
+                }
+
+                // Footer Minimalis
+                footer { class: "app-footer",
+                    p { "CatatMoney • Monochrome Swiss FinTech • Tailwind CSS & Dioxus 0.7" }
+                }
+            }
+
+            // Bottom Navigation Dock & Center Floating (+) Button
+            BottomNavBar {
+                active_tab: *active_tab.read(),
+                on_select_tab: move |tab| active_tab.set(tab),
+                on_open_modal: move |_| {
+                    editing_trx.set(None);
+                    is_modal_open.set(true);
+                },
+            }
+
+            // Modal Input & Edit Transaksi dengan Rincian Waktu & Lampiran
+            TransactionModal {
+                is_open: *is_modal_open.read(),
+                editing_transaction: editing_trx.read().clone(),
+                wallets: wallets.read().clone(),
+                categories: categories.read().clone(),
+                on_close: move |_| {
+                    is_modal_open.set(false);
+                    editing_trx.set(None);
+                },
+                on_save: handle_save,
+                on_add_category: handle_add_category,
+                on_open_add_wallet: move |_| is_wallet_modal_open.set(true),
+            }
+
+            // Modal Tambah Sumber Dana Baru
+            WalletModal {
+                is_open: *is_wallet_modal_open.read(),
+                on_close: move |_| is_wallet_modal_open.set(false),
+                on_save: handle_save_wallet,
+            }
+
+            // Modal Popup Khusus untuk Rincian Transaksi
+            DetailModal {
+                transaction: selected_detail_trx.read().clone(),
+                on_close: move |_| selected_detail_trx.set(None),
+                on_edit: move |trx: Transaction| {
+                    selected_detail_trx.set(None);
+                    editing_trx.set(Some(trx));
+                    is_modal_open.set(true);
+                },
+                on_delete: move |trx: Transaction| {
+                    selected_detail_trx.set(None);
+                    pending_delete.set(Some(PendingDelete::Transaction(trx)));
+                },
+            }
+
+            // Modal Dialog Konfirmasi Penghapusan
+            if let Some(target) = pending_delete.read().clone() {
+                match target {
+                    PendingDelete::Transaction(trx) => rsx! {
+                        ConfirmModal {
+                            title: "Hapus Transaksi".to_string(),
+                            message: format!("Apakah Anda yakin ingin menghapus catatan transaksi \"{}\" sebesar {}? Tindakan ini tidak dapat dibatalkan.", trx.title, format_idr(trx.amount)),
+                            confirm_label: "Hapus Transaksi".to_string(),
+                            on_confirm: {
+                                let id = trx.id.clone();
+                                move |_| {
+                                    transactions.write().retain(|t| t.id != id);
+                                    save_transactions(&transactions.read());
+                                    pending_delete.set(None);
+                                }
+                            },
+                            on_cancel: move |_| pending_delete.set(None),
+                        }
+                    },
+                    PendingDelete::Wallet(w_name) => rsx! {
+                        ConfirmModal {
+                            title: "Hapus Sumber Dana".to_string(),
+                            message: format!("Apakah Anda yakin ingin menghapus sumber dana \"{}\"? Catatan transaksi yang sudah ada tidak akan terhapus.", w_name),
+                            confirm_label: "Hapus Sumber Dana".to_string(),
+                            on_confirm: {
+                                let name = w_name.clone();
+                                move |_| {
+                                    wallets.write().retain(|w| w.name != name);
+                                    save_wallets(&wallets.read());
+                                    pending_delete.set(None);
+                                }
+                            },
+                            on_cancel: move |_| pending_delete.set(None),
+                        }
+                    },
+                    PendingDelete::Category { is_expense, name } => rsx! {
+                        ConfirmModal {
+                            title: "Hapus Kategori".to_string(),
+                            message: format!("Apakah Anda yakin ingin menghapus kategori \"{}\"? Catatan transaksi yang sudah ada tidak akan terhapus.", name),
+                            confirm_label: "Hapus Kategori".to_string(),
+                            on_confirm: {
+                                let cat_name = name.clone();
+                                move |_| {
+                                    let mut cats = categories.write();
+                                    if is_expense {
+                                        cats.expense.retain(|c| c != &cat_name);
+                                    } else {
+                                        cats.income.retain(|c| c != &cat_name);
+                                    }
+                                    save_categories(&cats);
+                                    pending_delete.set(None);
+                                }
+                            },
+                            on_cancel: move |_| pending_delete.set(None),
+                        }
+                    },
+                }
+            }
+        }
+    }
+}

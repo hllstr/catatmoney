@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <rect width="512" height="512" rx="112" fill="#09090b"/>
+  <rect x="24" y="24" width="464" height="464" rx="96" fill="none" stroke="#27272a" stroke-width="8"/>
+  <g transform="translate(106, 116)" fill="none" stroke="#fafafa" stroke-width="26" stroke-linecap="round" stroke-linejoin="round">
+    <!-- Wallet Card Shape -->
+    <path d="M260 90V40a20 20 0 0 0-20-20H30A20 20 0 0 0 10 40v220a20 20 0 0 0 20 20h210a20 20 0 0 0 20-20v-50"/>
+    <rect x="150" y="90" width="140" height="100" rx="16"/>
+    <circle cx="230" cy="140" r="14" fill="#fafafa"/>
+  </g>
+</svg>

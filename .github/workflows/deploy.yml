@@ -1,0 +1,74 @@
+name: Deploy CatatMoney to GitHub Pages (PWA)
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  build-and-deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Rust Toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+
+      - name: Cache Cargo & Build Artifacts
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-
+
+      - name: Install Dioxus CLI
+        run: |
+          if ! command -v dx &> /dev/null; then
+            echo "Installing cargo-binstall..."
+            curl -L --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install-from-binstall-release.sh | bash
+            echo "Installing dioxus-cli..."
+            cargo binstall --no-confirm dioxus-cli --version 0.7.10 || cargo binstall --no-confirm dioxus-cli || cargo install dioxus-cli --locked
+          fi
+          dx --version
+
+      - name: Build Web Application (Release)
+        run: |
+          dx build --release --web
+          # Fallback 404 for GitHub Pages SPA routing
+          if [ -f target/dx/catatmoney/release/web/public/index.html ]; then
+            cp target/dx/catatmoney/release/web/public/index.html target/dx/catatmoney/release/web/public/404.html
+          fi
+
+      - name: Setup GitHub Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload Pages Artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: target/dx/catatmoney/release/web/public
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
