@@ -155,9 +155,9 @@ pub fn App() -> Element {
         document::Meta { name: "apple-mobile-web-app-capable", content: "yes" }
         document::Meta { name: "apple-mobile-web-app-status-bar-style", content: "black-translucent" }
         document::Meta { name: "apple-mobile-web-app-title", content: "CatatMoney" }
-        document::Link { rel: "manifest", href: "./manifest.json" }
-        document::Link { rel: "icon", r#type: "image/svg+xml", href: "./icon.svg" }
-        document::Link { rel: "apple-touch-icon", href: "./icon.svg" }
+        document::Link { rel: "manifest", href: "/catatmoney/manifest.json" }
+        document::Link { rel: "icon", r#type: "image/svg+xml", href: "/catatmoney/icon.svg" }
+        document::Link { rel: "apple-touch-icon", href: "/catatmoney/icon.svg" }
         document::Link {
             rel: "preconnect",
             href: "https://fonts.googleapis.com",

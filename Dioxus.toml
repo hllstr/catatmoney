@@ -7,7 +7,7 @@ public_dir = "assets"
 
 [web.app]
 title = "CatatMoney - Financial Cashflow & Expense Intelligence"
-base_path = "./"
+base_path = "catatmoney"
 
 [web.wasm_opt]
 level = "4"
