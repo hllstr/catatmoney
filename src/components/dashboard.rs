@@ -103,10 +103,7 @@ pub fn MainDashboard(
             div { class: "dashboard-main-grid",
                 // Kolom Kiri: Grafik Vektor SVG
                 div { class: "surface-panel",
-                    CashflowChart {
-                        transactions: transactions.clone(),
-                        on_open_analytics: on_go_to_analytics.clone(),
-                    }
+                    CashflowChart { transactions: transactions.clone() }
                 }
 
                 // Kolom Kanan: Distribusi Kategori Pengeluaran
@@ -118,10 +115,10 @@ pub fn MainDashboard(
                         }
                         button {
                             r#type: "button",
-                            class: "btn-secondary text-[11px] py-1 px-2.5 flex items-center gap-1.5 shrink-0",
+                            class: "btn-link text-xs flex items-center gap-1",
                             onclick: move |_| on_go_to_analytics.call(()),
-                            IconPieChart { size: "12" }
-                            span { "Analisis Lengkap" }
+                            "Lihat Detail"
+                            IconArrowRight { size: "12" }
                         }
                     }
 

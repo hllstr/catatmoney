@@ -249,11 +249,7 @@ pub fn AnalyticsView(
                         button {
                             r#type: "button",
                             key: "{tf.as_str()}",
-                            class: if *timeframe.read() == tf {
-                                "px-3 py-1.5 rounded-lg text-xs font-semibold bg-[var(--bg-surface-elevated)] text-[var(--text-primary)] shadow-sm border border-[var(--border-subtle)] transition-all"
-                            } else {
-                                "px-3 py-1.5 rounded-lg text-xs font-medium text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-all"
-                            },
+                            class: if *timeframe.read() == tf { "timeframe-pill active" } else { "timeframe-pill" },
                             onclick: move |_| timeframe.set(tf),
                             "{tf.as_str()}"
                         }
@@ -261,8 +257,13 @@ pub fn AnalyticsView(
                 }
             }
 
-            // 4 Executive Financial Health KPI Cards
-            div { class: "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6",
+            // Konten Analitik dengan Animasi Halus saat Berpindah Rentang Waktu
+            div {
+                class: "analytics-content-fade",
+                key: "{timeframe.read().as_str()}",
+
+                // 4 Executive Financial Health KPI Cards
+                div { class: "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6",
                 // Kartu 1: Arus Kas Bersih (Net Cashflow)
                 div { class: "p-4 rounded-xl bg-[var(--bg-card)] border border-[var(--border-subtle)] flex flex-col justify-between",
                     div { class: "flex items-center justify-between mb-2",
@@ -355,21 +356,13 @@ pub fn AnalyticsView(
                         div { class: "inline-flex p-0.5 rounded-lg bg-[var(--bg-surface-subtle)] border border-[var(--border-subtle)]",
                             button {
                                 r#type: "button",
-                                class: if *breakdown_mode.read() == BreakdownMode::Expense {
-                                    "px-2.5 py-1 rounded-md text-[11px] font-semibold bg-[var(--bg-surface-elevated)] text-[var(--text-primary)] shadow-xs"
-                                } else {
-                                    "px-2.5 py-1 rounded-md text-[11px] font-medium text-[var(--text-muted)] hover:text-[var(--text-primary)]"
-                                },
+                                class: if *breakdown_mode.read() == BreakdownMode::Expense { "timeframe-pill active text-[11px] py-1 px-2.5" } else { "timeframe-pill text-[11px] py-1 px-2.5" },
                                 onclick: move |_| breakdown_mode.set(BreakdownMode::Expense),
                                 "Pengeluaran"
                             }
                             button {
                                 r#type: "button",
-                                class: if *breakdown_mode.read() == BreakdownMode::Income {
-                                    "px-2.5 py-1 rounded-md text-[11px] font-semibold bg-[var(--bg-surface-elevated)] text-[var(--text-primary)] shadow-xs"
-                                } else {
-                                    "px-2.5 py-1 rounded-md text-[11px] font-medium text-[var(--text-muted)] hover:text-[var(--text-primary)]"
-                                },
+                                class: if *breakdown_mode.read() == BreakdownMode::Income { "timeframe-pill active text-[11px] py-1 px-2.5" } else { "timeframe-pill text-[11px] py-1 px-2.5" },
                                 onclick: move |_| breakdown_mode.set(BreakdownMode::Income),
                                 "Pemasukan"
                             }
@@ -413,7 +406,7 @@ pub fn AnalyticsView(
                                             stroke_dasharray: "{s_array}",
                                             stroke_dashoffset: "{s_offset}",
                                             stroke_linecap: "round",
-                                            class: "transition-all duration-300",
+                                            class: "donut-ring-circle",
                                         }
                                     }
                                 }
@@ -618,3 +611,6 @@ pub fn AnalyticsView(
         }
     }
 }
+}
+
+

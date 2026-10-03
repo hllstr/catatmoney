@@ -1,13 +1,9 @@
 use dioxus::prelude::*;
-use crate::components::icons::IconPieChart;
 use crate::model::{format_idr, get_today_date, Transaction, TransactionType};
 use std::collections::BTreeMap;
 
 #[component]
-pub fn CashflowChart(
-    transactions: Vec<Transaction>,
-    on_open_analytics: Option<EventHandler<()>>,
-) -> Element {
+pub fn CashflowChart(transactions: Vec<Transaction>) -> Element {
     // Kelompokkan data transaksi berdasarkan tanggal (urutan kronologis)
     let mut daily_data: BTreeMap<String, (f64, f64)> = BTreeMap::new();
 
@@ -54,33 +50,19 @@ pub fn CashflowChart(
 
     rsx! {
         div { class: "chart-container",
-            div { class: "chart-header flex flex-col sm:flex-row sm:items-center justify-between gap-3",
+            div { class: "chart-header",
                 div {
                     h3 { class: "chart-title", "Tren Arus Kas Harian" }
                     p { class: "chart-subtitle", "Perbandingan arus masuk vs arus keluar (7 Hari Terakhir)" }
                 }
-                div { class: "flex items-center gap-3",
-                    div { class: "chart-legend",
-                        div { class: "legend-item",
-                            span { class: "legend-dot income" }
-                            span { "Pemasukan" }
-                        }
-                        div { class: "legend-item",
-                            span { class: "legend-dot expense" }
-                            span { "Pengeluaran" }
-                        }
+                div { class: "chart-legend",
+                    div { class: "legend-item",
+                        span { class: "legend-dot income" }
+                        span { "Pemasukan" }
                     }
-                    if let Some(ref handler) = on_open_analytics {
-                        button {
-                            r#type: "button",
-                            class: "btn-secondary text-[11px] py-1 px-2.5 flex items-center gap-1.5 shrink-0",
-                            onclick: {
-                                let h = handler.clone();
-                                move |_| h.call(())
-                            },
-                            IconPieChart { size: "12" }
-                            span { "Analitik" }
-                        }
+                    div { class: "legend-item",
+                        span { class: "legend-dot expense" }
+                        span { "Pengeluaran" }
                     }
                 }
             }
