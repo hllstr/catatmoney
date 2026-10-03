@@ -13,4 +13,5 @@ pub mod wallet_modal;
 pub mod confirm_modal;
 pub mod onboarding;
 pub mod profile_modal;
+pub mod analytics;
 

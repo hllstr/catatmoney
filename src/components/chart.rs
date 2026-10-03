@@ -1,18 +1,19 @@
 use dioxus::prelude::*;
-use crate::model::{format_idr, Transaction, TransactionType};
+use crate::components::icons::IconPieChart;
+use crate::model::{format_idr, get_today_date, Transaction, TransactionType};
 use std::collections::BTreeMap;
 
 #[component]
-pub fn CashflowChart(transactions: Vec<Transaction>) -> Element {
+pub fn CashflowChart(
+    transactions: Vec<Transaction>,
+    on_open_analytics: Option<EventHandler<()>>,
+) -> Element {
     // Kelompokkan data transaksi berdasarkan tanggal (urutan kronologis)
     let mut daily_data: BTreeMap<String, (f64, f64)> = BTreeMap::new();
 
-    // Default isi 5 hari terakhir agar grafik selalu memiliki struktur yang rapi
-    daily_data.insert("2026-09-28".to_string(), (0.0, 0.0));
-    daily_data.insert("2026-09-29".to_string(), (0.0, 0.0));
-    daily_data.insert("2026-09-30".to_string(), (0.0, 0.0));
-    daily_data.insert("2026-10-01".to_string(), (0.0, 0.0));
-    daily_data.insert("2026-10-02".to_string(), (0.0, 0.0));
+    // Pastikan tanggal hari ini terisi jika belum ada data
+    let today = get_today_date();
+    daily_data.insert(today.clone(), (0.0, 0.0));
 
     for trx in &transactions {
         let entry = daily_data.entry(trx.date.clone()).or_insert((0.0, 0.0));
@@ -53,19 +54,33 @@ pub fn CashflowChart(transactions: Vec<Transaction>) -> Element {
 
     rsx! {
         div { class: "chart-container",
-            div { class: "chart-header",
+            div { class: "chart-header flex flex-col sm:flex-row sm:items-center justify-between gap-3",
                 div {
                     h3 { class: "chart-title", "Tren Arus Kas Harian" }
                     p { class: "chart-subtitle", "Perbandingan arus masuk vs arus keluar (7 Hari Terakhir)" }
                 }
-                div { class: "chart-legend",
-                    div { class: "legend-item",
-                        span { class: "legend-dot income" }
-                        span { "Pemasukan" }
+                div { class: "flex items-center gap-3",
+                    div { class: "chart-legend",
+                        div { class: "legend-item",
+                            span { class: "legend-dot income" }
+                            span { "Pemasukan" }
+                        }
+                        div { class: "legend-item",
+                            span { class: "legend-dot expense" }
+                            span { "Pengeluaran" }
+                        }
                     }
-                    div { class: "legend-item",
-                        span { class: "legend-dot expense" }
-                        span { "Pengeluaran" }
+                    if let Some(ref handler) = on_open_analytics {
+                        button {
+                            r#type: "button",
+                            class: "btn-secondary text-[11px] py-1 px-2.5 flex items-center gap-1.5 shrink-0",
+                            onclick: {
+                                let h = handler.clone();
+                                move |_| h.call(())
+                            },
+                            IconPieChart { size: "12" }
+                            span { "Analitik" }
+                        }
                     }
                 }
             }

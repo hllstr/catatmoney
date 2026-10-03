@@ -3,6 +3,7 @@ use dioxus::prelude::*;
 mod components;
 mod model;
 
+use components::analytics::AnalyticsView;
 use components::bottom_nav::{BottomNavBar, NavTab};
 use components::calendar::FinancialCalendar;
 use components::confirm_modal::ConfirmModal;
@@ -272,6 +273,14 @@ pub fn App() -> Element {
                                     on_go_to_history: move |_| active_tab.set(NavTab::History),
                                     on_select_trx: move |trx| selected_detail_trx.set(Some(trx)),
                                     on_open_add_wallet: move |_| is_wallet_modal_open.set(true),
+                                    on_go_to_analytics: move |_| active_tab.set(NavTab::Analytics),
+                                }
+                            },
+                            NavTab::Analytics => rsx! {
+                                AnalyticsView {
+                                    transactions: transactions.read().clone(),
+                                    wallets: wallets.read().clone(),
+                                    on_select_trx: move |trx| selected_detail_trx.set(Some(trx)),
                                 }
                             },
                             NavTab::Calendar => rsx! {

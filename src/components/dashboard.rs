@@ -15,6 +15,7 @@ pub fn MainDashboard(
     on_go_to_history: EventHandler<()>,
     on_select_trx: EventHandler<Transaction>,
     on_open_add_wallet: EventHandler<()>,
+    on_go_to_analytics: EventHandler<()>,
 ) -> Element {
     // Hitung ringkasan
     let (total_income, total_expense) = transactions.iter().fold((0.0, 0.0), |acc, t| {
@@ -102,15 +103,25 @@ pub fn MainDashboard(
             div { class: "dashboard-main-grid",
                 // Kolom Kiri: Grafik Vektor SVG
                 div { class: "surface-panel",
-                    CashflowChart { transactions: transactions.clone() }
+                    CashflowChart {
+                        transactions: transactions.clone(),
+                        on_open_analytics: on_go_to_analytics.clone(),
+                    }
                 }
 
                 // Kolom Kanan: Distribusi Kategori Pengeluaran
                 div { class: "surface-panel",
-                    div { class: "panel-header",
+                    div { class: "panel-header flex items-center justify-between",
                         h3 { class: "panel-title",
                             IconPieChart { size: "16" }
                             "Alokasi Pengeluaran"
+                        }
+                        button {
+                            r#type: "button",
+                            class: "btn-secondary text-[11px] py-1 px-2.5 flex items-center gap-1.5 shrink-0",
+                            onclick: move |_| on_go_to_analytics.call(()),
+                            IconPieChart { size: "12" }
+                            span { "Analisis Lengkap" }
                         }
                     }
 

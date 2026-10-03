@@ -1,11 +1,12 @@
 use dioxus::prelude::*;
 use crate::components::icons::{
-    IconCalendar, IconLayoutDashboard, IconList, IconPlus, IconSliders,
+    IconCalendar, IconLayoutDashboard, IconList, IconPieChart, IconPlus, IconSliders,
 };
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum NavTab {
     Dashboard,
+    Analytics,
     Calendar,
     History,
     Management,
@@ -27,6 +28,15 @@ pub fn BottomNavBar(
                     onclick: move |_| on_select_tab.call(NavTab::Dashboard),
                     IconLayoutDashboard { size: "18" }
                     span { class: "dock-label", "Dashboard" }
+                }
+
+                // Tab Analitik Keuangan
+                button {
+                    r#type: "button",
+                    class: if active_tab == NavTab::Analytics { "dock-item active" } else { "dock-item" },
+                    onclick: move |_| on_select_tab.call(NavTab::Analytics),
+                    IconPieChart { size: "18" }
+                    span { class: "dock-label", "Analitik" }
                 }
 
                 // Tab Kalender Keuangan
