@@ -43,10 +43,6 @@ pub fn MainDashboard(
             // 0. Greeting Header Personal
             div { class: "greeting-banner mb-6 p-4 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-card)] flex flex-col sm:flex-row sm:items-center justify-between gap-3",
                 div {
-                    div { class: "inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[var(--bg-hover)] border border-[var(--border-subtle)] text-[11px] font-semibold text-[var(--text-secondary)] mb-1.5",
-                        span { class: "w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block" }
-                        span { "Finansial Personal" }
-                    }
                     h2 { class: "text-lg font-bold text-[var(--text-primary)] tracking-tight", "Halo, {user_name}" }
                     p { class: "text-xs text-[var(--text-secondary)] mt-0.5", "Berikut ringkasan arus kas dan posisi saldo seluruh akun keuangan Anda." }
                 }
