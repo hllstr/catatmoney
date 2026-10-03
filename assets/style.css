@@ -705,6 +705,37 @@ body {
   min-height: 55px;
 }
 
+/* Native Date & Time Clock Picker Polish */
+.dark input[type="date"],
+.dark input[type="time"] {
+  color-scheme: dark;
+}
+
+.light input[type="date"],
+.light input[type="time"] {
+  color-scheme: light;
+}
+
+input[type="date"],
+input[type="time"] {
+  cursor: pointer;
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator,
+input[type="time"]::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+  opacity: 0.75;
+  padding: 0.15rem;
+  border-radius: 4px;
+  transition: opacity 0.15s ease, background 0.15s ease;
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator:hover,
+input[type="time"]::-webkit-calendar-picker-indicator:hover {
+  opacity: 1;
+  background: var(--bg-hover);
+}
+
 .form-error {
   background: var(--negative-bg);
   border: 1px solid var(--negative-border);

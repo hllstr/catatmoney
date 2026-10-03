@@ -1,9 +1,10 @@
 use dioxus::prelude::*;
 use crate::components::icons::{
-    IconArrowDownRight, IconArrowUpRight, IconClock, IconPaperclip, IconPlus, IconWallet, IconX,
+    IconArrowDownRight, IconArrowUpRight, IconCalendar, IconClock, IconPaperclip, IconPlus,
+    IconWallet, IconX,
 };
 use crate::model::{
-    format_number_dots, generate_id, get_current_time, get_today_date, parse_input_idr,
+    format_number_dots, generate_id, get_current_time_hm, get_today_date, parse_input_idr,
     Transaction, TransactionType, UserCategories, Wallet,
 };
 
@@ -81,8 +82,15 @@ pub fn TransactionModal(
     let mut time = use_signal(|| {
         editing_transaction
             .as_ref()
-            .map(|t| t.time.clone())
-            .unwrap_or_else(get_current_time)
+            .map(|t| {
+                let tm = t.time.trim();
+                if tm.len() >= 5 {
+                    tm[..5].to_string()
+                } else {
+                    tm.to_string()
+                }
+            })
+            .unwrap_or_else(get_current_time_hm)
     });
     let mut notes = use_signal(|| {
         editing_transaction
@@ -129,7 +137,7 @@ pub fn TransactionModal(
         }
 
         let tm = time.read().trim().to_string();
-        let time_val = if tm.is_empty() { get_current_time() } else { tm };
+        let time_val = if tm.is_empty() { get_current_time_hm() } else { tm };
 
         let target_id = edit_id.clone().unwrap_or_else(generate_id);
 
@@ -325,10 +333,25 @@ pub fn TransactionModal(
                         }
                     }
 
-                    // Tanggal & Waktu (Detik)
+                    // Tanggal & Waktu (Native Date & Clock Picker)
                     div { class: "grid grid-cols-2 gap-3 mb-4",
                         div { class: "field-group mb-0",
-                            label { class: "field-label", "Tanggal" }
+                            div { class: "flex items-center justify-between mb-1",
+                                label { class: "field-label mb-0",
+                                    span { class: "flex items-center gap-1.5",
+                                        IconCalendar { size: "12" }
+                                        "Tanggal"
+                                    }
+                                }
+                                button {
+                                    r#type: "button",
+                                    class: "btn-link text-[11px] text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors",
+                                    onclick: move |_| {
+                                        date.set(get_today_date());
+                                    },
+                                    "Hari Ini"
+                                }
+                            }
                             input {
                                 class: "field-input tabular-numbers",
                                 r#type: "date",
@@ -337,16 +360,25 @@ pub fn TransactionModal(
                             }
                         }
                         div { class: "field-group mb-0",
-                            label { class: "field-label",
-                                span { class: "flex items-center gap-1",
-                                    IconClock { size: "12" }
-                                    "Waktu"
+                            div { class: "flex items-center justify-between mb-1",
+                                label { class: "field-label mb-0",
+                                    span { class: "flex items-center gap-1.5",
+                                        IconClock { size: "12" }
+                                        "Waktu"
+                                    }
+                                }
+                                button {
+                                    r#type: "button",
+                                    class: "btn-link text-[11px] text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors",
+                                    onclick: move |_| {
+                                        time.set(get_current_time_hm());
+                                    },
+                                    "Sekarang"
                                 }
                             }
                             input {
                                 class: "field-input tabular-numbers",
-                                r#type: "text",
-                                placeholder: "HH:mm:ss",
+                                r#type: "time",
                                 value: "{time}",
                                 oninput: move |e| time.set(e.value()),
                             }

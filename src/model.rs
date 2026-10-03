@@ -210,6 +210,21 @@ pub fn get_current_time() -> String {
     }
 }
 
+/// Mendapatkan waktu saat ini dengan jam dan menit (HH:mm) untuk time/clock picker
+pub fn get_current_time_hm() -> String {
+    #[cfg(target_arch = "wasm32")]
+    {
+        let date = js_sys::Date::new_0();
+        let hours = date.get_hours();
+        let minutes = date.get_minutes();
+        format!("{:02}:{:02}", hours, minutes)
+    }
+    #[cfg(not(target_arch = "wasm32"))]
+    {
+        "14:30".to_string()
+    }
+}
+
 /// Memuat profil pengguna dari LocalStorage browser
 pub fn load_profile() -> Option<UserProfile> {
     #[cfg(target_arch = "wasm32")]
