@@ -1486,9 +1486,11 @@ body {
   display: flex;
   flex-direction: column;
   gap: 0.4rem;
+  will-change: transform;
 }
 
-.wallet-card:hover {
+.wallet-card:hover,
+.wallet-card:active {
   background: var(--bg-hover);
   border-color: var(--border-hover);
   transform: translateY(-1px);
@@ -1900,12 +1902,17 @@ body {
     display: flex;
     overflow-x: auto;
     gap: 0.65rem;
-    padding-bottom: 0.4rem;
-    margin: 0 -0.25rem;
+    padding-top: 0.45rem;
+    padding-bottom: 0.5rem;
+    margin-top: -0.45rem;
+    margin-bottom: -0.15rem;
+    margin-left: -0.25rem;
+    margin-right: -0.25rem;
     padding-left: 0.25rem;
     padding-right: 0.25rem;
     scrollbar-width: none;
     -webkit-overflow-scrolling: touch;
+    touch-action: pan-x;
   }
 
   .wallet-grid::-webkit-scrollbar {
@@ -1917,6 +1924,8 @@ body {
     flex: 0 0 auto;
     padding: 0.75rem 0.85rem;
     border-radius: 10px;
+    will-change: transform;
+    -webkit-tap-highlight-color: transparent;
   }
 
   .wallet-card-header {
