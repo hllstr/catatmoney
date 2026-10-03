@@ -90,9 +90,6 @@ pub fn MainDashboard(
                                     }
                                     div { class: "wallet-name", "{w.name}" }
                                     div { class: "{bal_class}", "{format_idr(current_bal)}" }
-                                    div { class: "wallet-initial tabular-numbers",
-                                        "Saldo Awal: {format_idr(w.initial_balance)}"
-                                    }
                                 }
                             }
                         }
