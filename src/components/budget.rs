@@ -1,7 +1,7 @@
 use dioxus::prelude::*;
 use crate::components::icons::{
     CategoryIcon, IconAlertCircle, IconCheck, IconEdit, IconPlus, IconSparkles,
-    IconTarget, IconTrash, IconTrendingDown, IconTrendingUp,
+    IconTarget, IconTrash, IconTrendingDown, IconTrendingUp, IconX,
 };
 use crate::model::{
     format_idr, generate_id, get_default_budgets, get_month_days_info, get_today_date,
@@ -576,7 +576,7 @@ fn BudgetModal(
                         r#type: "button",
                         class: "w-7 h-7 rounded-lg hover:bg-[var(--bg-surface-elevated)] flex items-center justify-center text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors",
                         onclick: move |_| on_close.call(()),
-                        "✕"
+                        IconX { size: "16" }
                     }
                 }
 

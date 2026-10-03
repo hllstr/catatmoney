@@ -1,6 +1,6 @@
 use dioxus::prelude::*;
 use crate::components::icons::{
-    IconCalendar, IconLayoutDashboard, IconList, IconPieChart, IconPlus, IconSliders,
+    IconCalendar, IconLayoutDashboard, IconList, IconPieChart, IconPiggyBank, IconPlus, IconSliders,
     IconTarget,
 };
 
@@ -9,6 +9,7 @@ pub enum NavTab {
     Dashboard,
     Analytics,
     Budget,
+    Savings,
     Calendar,
     History,
     Management,
@@ -54,6 +55,17 @@ pub fn BottomNavBar(
                     onclick: move |_| on_select_tab.call(NavTab::Budget),
                     IconTarget { size: "18" }
                     span { class: "dock-label", "Anggaran" }
+                }
+
+                // Tab Target Tabungan & Finansial Impian (Baru)
+                button {
+                    r#type: "button",
+                    title: "Target Tabungan",
+                    aria_label: "Target Tabungan",
+                    class: if active_tab == NavTab::Savings { "dock-item active" } else { "dock-item" },
+                    onclick: move |_| on_select_tab.call(NavTab::Savings),
+                    IconPiggyBank { size: "18" }
+                    span { class: "dock-label", "Tabungan" }
                 }
 
                 // Tombol Aksi Tambah Transaksi Utama (+) di Tengah

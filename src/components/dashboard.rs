@@ -1,13 +1,13 @@
 use dioxus::prelude::*;
 use crate::components::chart::CashflowChart;
 use crate::components::icons::{
-    CategoryIcon, IconArrowLeftRight, IconArrowRight, IconPieChart, IconPlus, IconReceipt,
+    CategoryIcon, IconArrowLeftRight, IconArrowRight, IconPieChart, IconPiggyBank, IconPlus, IconReceipt,
     IconTarget, IconWallet, WalletIcon,
 };
 use crate::components::summary::Summary;
 use crate::model::{
     calculate_wallet_balance, format_idr, get_month_days_info, get_today_date,
-    CategoryBudget, Transaction, TransactionType, Wallet,
+    CategoryBudget, SavingsGoal, Transaction, TransactionType, Wallet,
 };
 use std::collections::HashMap;
 
@@ -17,11 +17,13 @@ pub fn MainDashboard(
     transactions: Vec<Transaction>,
     wallets: Vec<Wallet>,
     budgets: Vec<CategoryBudget>,
+    savings_goals: Vec<SavingsGoal>,
     on_go_to_history: EventHandler<()>,
     on_select_trx: EventHandler<Transaction>,
     on_open_add_wallet: EventHandler<()>,
     on_go_to_analytics: EventHandler<()>,
     on_go_to_budget: EventHandler<()>,
+    on_go_to_savings: EventHandler<()>,
 ) -> Element {
     // Hitung ringkasan
     let (total_income, total_expense) = transactions.iter().fold((0.0, 0.0), |acc, t| {
@@ -74,6 +76,16 @@ pub fn MainDashboard(
         0.0
     };
 
+    // Perhitungan Ringkasan Target Tabungan
+    let dash_total_target: f64 = savings_goals.iter().map(|g| g.target_amount).sum();
+    let dash_total_saved: f64 = savings_goals.iter().map(|g| g.current_amount).sum();
+    let dash_savings_pct = if dash_total_target > 0.0 {
+        (dash_total_saved / dash_total_target * 100.0).clamp(0.0, 999.0)
+    } else {
+        0.0
+    };
+    let active_savings_count = savings_goals.iter().filter(|g| g.current_amount < g.target_amount).count();
+    let completed_savings_count = savings_goals.iter().filter(|g| g.current_amount >= g.target_amount).count();
 
     let recent_transactions: Vec<Transaction> = transactions.iter().take(4).cloned().collect();
 
@@ -267,7 +279,84 @@ pub fn MainDashboard(
                 }
             }
 
-            // 5. Aktivitas Transaksi Terkini
+            // 5. Panel Ringkasan Target Tabungan
+            if !savings_goals.is_empty() {
+                div { class: "surface-panel mt-6 p-4 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-card)]",
+                    div { class: "panel-header flex items-center justify-between mb-3",
+                        div { class: "flex items-center gap-2",
+                            span { class: "w-7 h-7 rounded-lg bg-[var(--bg-surface-elevated)] border border-[var(--border-subtle)] flex items-center justify-center text-[var(--accent)]",
+                                IconPiggyBank { size: "15" }
+                            }
+                            div {
+                                h3 { class: "text-sm font-bold text-[var(--text-primary)]", "Progres Target Tabungan" }
+                                p { class: "text-[11px] text-[var(--text-muted)]",
+                                    "{active_savings_count} sasaran aktif, {completed_savings_count} tercapai"
+                                }
+                            }
+                        }
+                        button {
+                            r#type: "button",
+                            class: "btn-link text-xs flex items-center gap-1",
+                            onclick: move |_| on_go_to_savings.call(()),
+                            "Buka Tabungan"
+                            IconArrowRight { size: "12" }
+                        }
+                    }
+
+                    // Progress Bar Utama Tabungan
+                    div { class: "space-y-1.5 my-2",
+                        div { class: "flex items-center justify-between text-xs",
+                            span { class: "text-[var(--text-secondary)]",
+                                "Terkumpul: "
+                                strong { class: "text-[var(--text-primary)] tabular-numbers", "{format_idr(dash_total_saved)}" }
+                                " dari {format_idr(dash_total_target)}"
+                            }
+                            span { class: "font-semibold tabular-numbers text-[var(--accent)]",
+                                "{dash_savings_pct:.0}%"
+                            }
+                        }
+                        div { class: "w-full bg-[var(--bg-surface-subtle)] rounded-full h-2 overflow-hidden",
+                            div {
+                                class: "bg-[var(--accent)] h-full rounded-full transition-all",
+                                style: "width: {dash_savings_pct.min(100.0)}%;",
+                            }
+                        }
+                    }
+
+                    // Mini Progress per Target (maksimal 3 target teratas)
+                    div { class: "grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-3 mt-2 border-t border-[var(--border-subtle)]",
+                        for goal in savings_goals.iter().take(3) {
+                            {
+                                let g_pct = if goal.target_amount > 0.0 {
+                                    (goal.current_amount / goal.target_amount * 100.0).clamp(0.0, 100.0)
+                                } else {
+                                    0.0
+                                };
+                                let is_done = goal.current_amount >= goal.target_amount;
+                                rsx! {
+                                    div { class: "p-2 rounded-lg bg-[var(--bg-surface-subtle)] text-[11px]",
+                                        key: "{goal.id}",
+                                        div { class: "flex items-center justify-between mb-1",
+                                            span { class: "font-semibold text-[var(--text-primary)] truncate max-w-[120px]", "{goal.name}" }
+                                            span { class: if is_done { "tabular-numbers text-[var(--positive)] font-bold" } else { "tabular-numbers text-[var(--text-muted)]" },
+                                                "{g_pct:.0}%"
+                                            }
+                                        }
+                                        div { class: "w-full bg-[var(--bg-app)] rounded-full h-1 overflow-hidden",
+                                            div {
+                                                class: if is_done { "bg-[var(--positive)] h-full rounded-full" } else { "bg-[var(--accent)] h-full rounded-full" },
+                                                style: "width: {g_pct}%;",
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            // 6. Aktivitas Transaksi Terkini
             div { class: "surface-panel mt-6",
                 div { class: "panel-header",
                     h3 { class: "panel-title",

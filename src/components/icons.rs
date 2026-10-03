@@ -581,9 +581,71 @@ pub fn CategoryIcon(category: String) -> Element {
         "Kesehatan" => rsx! { IconHeartPulse {} },
         "Gaji" => rsx! { IconBriefcase {} },
         "Freelance" => rsx! { IconLaptop {} },
-        "Investasi" => rsx! { IconLineChart {} },
+        "Investasi" | "Investasi & Modal" | "Investasi & Bisnis" => rsx! { IconLineChart {} },
         "Hadiah" => rsx! { IconGift {} },
+        "Dana Darurat" => rsx! { IconShield { size: "16" } },
+        "Gadget & Elektronik" => rsx! { IconLaptop { size: "16" } },
+        "Liburan & Traveling" => rsx! { IconCompass { size: "16" } },
+        "Kendaraan" => rsx! { IconCar { size: "16" } },
+        "Rumah & Properti" => rsx! { IconHome { size: "16" } },
+        "Pendidikan" => rsx! { IconFileText { size: "16" } },
+        "Pernikahan & Keluarga" => rsx! { IconHeartPulse { size: "16" } },
         _ => rsx! { IconTag {} },
+    }
+}
+
+#[component]
+pub fn IconCompass(#[props(default = "18")] size: &'static str) -> Element {
+    rsx! {
+        svg {
+            width: "{size}",
+            height: "{size}",
+            view_box: "0 0 24 24",
+            fill: "none",
+            stroke: "currentColor",
+            stroke_width: "1.75",
+            stroke_linecap: "round",
+            stroke_linejoin: "round",
+            circle { cx: "12", cy: "12", r: "10" }
+            polygon { points: "16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76" }
+        }
+    }
+}
+
+#[component]
+pub fn IconHome(#[props(default = "18")] size: &'static str) -> Element {
+    rsx! {
+        svg {
+            width: "{size}",
+            height: "{size}",
+            view_box: "0 0 24 24",
+            fill: "none",
+            stroke: "currentColor",
+            stroke_width: "1.75",
+            stroke_linecap: "round",
+            stroke_linejoin: "round",
+            path { d: "m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" }
+            polyline { points: "9 22 9 12 15 12 15 22" }
+        }
+    }
+}
+
+#[component]
+pub fn IconHistory(#[props(default = "18")] size: &'static str) -> Element {
+    rsx! {
+        svg {
+            width: "{size}",
+            height: "{size}",
+            view_box: "0 0 24 24",
+            fill: "none",
+            stroke: "currentColor",
+            stroke_width: "1.75",
+            stroke_linecap: "round",
+            stroke_linejoin: "round",
+            path { d: "M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" }
+            path { d: "M3 3v5h5" }
+            path { d: "M12 7v5l4 2" }
+        }
     }
 }
 
@@ -974,6 +1036,98 @@ pub fn IconTrendingDown(#[props(default = "18")] size: &'static str) -> Element 
             stroke_linejoin: "round",
             polyline { points: "22 17 13.5 8.5 8.5 13.5 2 7" }
             polyline { points: "16 17 22 17 22 11" }
+        }
+    }
+}
+
+#[component]
+pub fn IconPiggyBank(#[props(default = "20")] size: &'static str) -> Element {
+    rsx! {
+        svg {
+            width: "{size}",
+            height: "{size}",
+            view_box: "0 0 24 24",
+            fill: "none",
+            stroke: "currentColor",
+            stroke_width: "1.75",
+            stroke_linecap: "round",
+            stroke_linejoin: "round",
+            path { d: "M19 5c-1.5 0-2.8 1.4-3 2-3.5-1.5-11-.3-11 5 0 1.8 0 3 2 4.5V20h4v-2h3v2h4v-4c1-.5 1.7-1 2-2h2v-4h-2c0-1-.5-1.5-1-2V5z" }
+            path { d: "M2 9v1c0 1.1.9 2 2 2h1" }
+            path { d: "M16 11h.01" }
+        }
+    }
+}
+
+#[component]
+pub fn IconAward(#[props(default = "20")] size: &'static str) -> Element {
+    rsx! {
+        svg {
+            width: "{size}",
+            height: "{size}",
+            view_box: "0 0 24 24",
+            fill: "none",
+            stroke: "currentColor",
+            stroke_width: "1.75",
+            stroke_linecap: "round",
+            stroke_linejoin: "round",
+            circle { cx: "12", cy: "8", r: "6" }
+            path { d: "M15.477 12.89 17 22l-5-3-5 3 1.523-9.11" }
+        }
+    }
+}
+
+#[component]
+pub fn IconFlag(#[props(default = "20")] size: &'static str) -> Element {
+    rsx! {
+        svg {
+            width: "{size}",
+            height: "{size}",
+            view_box: "0 0 24 24",
+            fill: "none",
+            stroke: "currentColor",
+            stroke_width: "1.75",
+            stroke_linecap: "round",
+            stroke_linejoin: "round",
+            path { d: "M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z" }
+            line { x1: "4", y1: "22", x2: "4", y2: "15" }
+        }
+    }
+}
+
+#[component]
+pub fn IconCoins(#[props(default = "20")] size: &'static str) -> Element {
+    rsx! {
+        svg {
+            width: "{size}",
+            height: "{size}",
+            view_box: "0 0 24 24",
+            fill: "none",
+            stroke: "currentColor",
+            stroke_width: "1.75",
+            stroke_linecap: "round",
+            stroke_linejoin: "round",
+            circle { cx: "8", cy: "8", r: "6" }
+            path { d: "M18.09 10.37A6 6 0 1 1 10.34 18" }
+            path { d: "M7 6h1v4" }
+            path { d: "m16.71 13.88.7.71-2.82 2.82" }
+        }
+    }
+}
+
+#[component]
+pub fn IconMinus(#[props(default = "18")] size: &'static str) -> Element {
+    rsx! {
+        svg {
+            width: "{size}",
+            height: "{size}",
+            view_box: "0 0 24 24",
+            fill: "none",
+            stroke: "currentColor",
+            stroke_width: "2",
+            stroke_linecap: "round",
+            stroke_linejoin: "round",
+            line { x1: "5", y1: "12", x2: "19", y2: "12" }
         }
     }
 }

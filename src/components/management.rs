@@ -7,8 +7,8 @@ use crate::components::icons::{
 #[allow(unused_imports)]
 use crate::model::{
     create_backup, format_idr, generate_id, get_today_date, parse_input_idr,
-    trigger_json_download, CatatMoneyBackup, ThemeMode, Transaction, TransactionType,
-    UserCategories, UserProfile, Wallet, WalletType,
+    trigger_json_download, CatatMoneyBackup, CategoryBudget, SavingsGoal, SavingsLogEntry,
+    ThemeMode, Transaction, TransactionType, UserCategories, UserProfile, Wallet, WalletType,
 };
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
@@ -26,13 +26,16 @@ pub fn ManagementView(
     transactions: Vec<Transaction>,
     wallets: Vec<Wallet>,
     categories: UserCategories,
+    budgets: Vec<CategoryBudget>,
+    savings_goals: Vec<SavingsGoal>,
+    savings_logs: Vec<SavingsLogEntry>,
     current_theme: ThemeMode,
     on_change_theme: EventHandler<ThemeMode>,
     on_update_wallets: EventHandler<Vec<Wallet>>,
     on_update_categories: EventHandler<UserCategories>,
     on_request_delete_wallet: EventHandler<String>,
     on_request_delete_category: EventHandler<(TransactionType, String)>,
-    on_restore_data: EventHandler<(Option<UserProfile>, Vec<Transaction>, Vec<Wallet>, UserCategories)>,
+    on_restore_data: EventHandler<(Option<UserProfile>, Vec<Transaction>, Vec<Wallet>, UserCategories, Vec<CategoryBudget>, Vec<SavingsGoal>, Vec<SavingsLogEntry>)>,
     on_request_reset_all_data: EventHandler<()>,
 ) -> Element {
     let mut active_subtab = use_signal(|| ManageTab::Wallets);
@@ -671,6 +674,9 @@ pub fn ManagementView(
                     let trxs_clone = transactions.clone();
                     let wallets_clone = wallets.clone();
                     let cats_clone = categories.clone();
+                    let budgets_clone = budgets.clone();
+                    let goals_clone = savings_goals.clone();
+                    let logs_clone = savings_logs.clone();
                     let profile_clone = profile.clone();
 
                     rsx! {
@@ -716,7 +722,15 @@ pub fn ManagementView(
                                             r#type: "button",
                                             class: "btn-primary text-xs py-2 px-4 flex items-center gap-2",
                                             onclick: move |_| {
-                                                let backup = create_backup(profile_clone.as_ref(), &trxs_clone, &wallets_clone, &cats_clone);
+                                                let backup = create_backup(
+                                                    profile_clone.as_ref(),
+                                                    &trxs_clone,
+                                                    &wallets_clone,
+                                                    &cats_clone,
+                                                    &budgets_clone,
+                                                    &goals_clone,
+                                                    &logs_clone,
+                                                );
                                                 if let Ok(json_str) = serde_json::to_string_pretty(&backup) {
                                                     let filename = format!("catatmoney_backup_{}.json", get_today_date());
                                                     trigger_json_download(&filename, &json_str);
@@ -778,7 +792,15 @@ pub fn ManagementView(
                                                                                                     let w_len = backup.wallets.len();
                                                                                                     status_signal.set(Some(format!("Berhasil memulihkan {} transaksi dan {} sumber dana!", t_len, w_len)));
                                                                                                     error_signal.set(None);
-                                                                                                    restore_cb.call((backup.profile, backup.transactions, backup.wallets, backup.categories));
+                                                                                                    restore_cb.call((
+                                                                                                        backup.profile,
+                                                                                                        backup.transactions,
+                                                                                                        backup.wallets,
+                                                                                                        backup.categories,
+                                                                                                        backup.budgets,
+                                                                                                        backup.savings_goals,
+                                                                                                        backup.savings_logs,
+                                                                                                    ));
                                                                                                 }
                                                                                                 Err(_) => {
                                                                                                     error_signal.set(Some("Format berkas JSON tidak sesuai struktur data cadangan CatatMoney.".to_string()));

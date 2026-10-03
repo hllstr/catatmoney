@@ -114,6 +114,63 @@ pub const STORAGE_KEY_CATEGORIES: &str = "catatmoney_categories_v1";
 pub const STORAGE_KEY_PROFILE: &str = "catatmoney_profile_v1";
 #[allow(dead_code)]
 pub const STORAGE_KEY_BUDGETS: &str = "catatmoney_budgets_v2";
+#[allow(dead_code)]
+pub const STORAGE_KEY_SAVINGS_GOALS: &str = "catatmoney_savings_goals_v1";
+#[allow(dead_code)]
+pub const STORAGE_KEY_SAVINGS_LOGS: &str = "catatmoney_savings_logs_v1";
+
+pub const SAVINGS_CATEGORIES: &[&str] = &[
+    "Dana Darurat",
+    "Gadget & Elektronik",
+    "Liburan & Traveling",
+    "Kendaraan",
+    "Rumah & Properti",
+    "Pendidikan",
+    "Investasi & Bisnis",
+    "Pernikahan & Keluarga",
+    "Lainnya",
+];
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub enum SavingsEntryType {
+    Deposit,
+    Withdraw,
+}
+
+#[allow(dead_code)]
+impl SavingsEntryType {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Self::Deposit => "Setoran",
+            Self::Withdraw => "Penarikan",
+        }
+    }
+}
+
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SavingsGoal {
+    pub id: String,
+    pub name: String,
+    pub category: String,
+    pub target_amount: f64,
+    pub current_amount: f64,
+    #[serde(default)]
+    pub target_date: Option<String>,
+    pub created_at: String,
+    #[serde(default)]
+    pub notes: String,
+}
+
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SavingsLogEntry {
+    pub id: String,
+    pub goal_id: String,
+    pub entry_type: SavingsEntryType,
+    pub amount: f64,
+    pub date: String,
+    pub time: String,
+    pub notes: String,
+}
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CategoryBudget {
@@ -348,6 +405,8 @@ pub fn reset_all_data() {
                 let _ = storage.remove_item(STORAGE_KEY_PROFILE);
                 let _ = storage.remove_item(STORAGE_KEY_BUDGETS);
                 let _ = storage.remove_item("catatmoney_budgets_v1");
+                let _ = storage.remove_item(STORAGE_KEY_SAVINGS_GOALS);
+                let _ = storage.remove_item(STORAGE_KEY_SAVINGS_LOGS);
             }
         }
     }
@@ -588,6 +647,96 @@ pub fn save_budgets(_budgets: &[CategoryBudget]) {
     }
 }
 
+pub fn load_savings_goals() -> Vec<SavingsGoal> {
+    #[cfg(target_arch = "wasm32")]
+    {
+        if let Some(window) = web_sys::window() {
+            if let Ok(Some(storage)) = window.local_storage() {
+                if let Ok(Some(raw_json)) = storage.get_item(STORAGE_KEY_SAVINGS_GOALS) {
+                    if let Ok(goals) = serde_json::from_str::<Vec<SavingsGoal>>(&raw_json) {
+                        return goals;
+                    }
+                }
+            }
+        }
+    }
+    vec![]
+}
+
+pub fn save_savings_goals(_goals: &[SavingsGoal]) {
+    #[cfg(target_arch = "wasm32")]
+    {
+        if let Some(window) = web_sys::window() {
+            if let Ok(Some(storage)) = window.local_storage() {
+                if let Ok(raw_json) = serde_json::to_string(_goals) {
+                    let _ = storage.set_item(STORAGE_KEY_SAVINGS_GOALS, &raw_json);
+                }
+            }
+        }
+    }
+}
+
+pub fn load_savings_logs() -> Vec<SavingsLogEntry> {
+    #[cfg(target_arch = "wasm32")]
+    {
+        if let Some(window) = web_sys::window() {
+            if let Ok(Some(storage)) = window.local_storage() {
+                if let Ok(Some(raw_json)) = storage.get_item(STORAGE_KEY_SAVINGS_LOGS) {
+                    if let Ok(logs) = serde_json::from_str::<Vec<SavingsLogEntry>>(&raw_json) {
+                        return logs;
+                    }
+                }
+            }
+        }
+    }
+    vec![]
+}
+
+pub fn save_savings_logs(_logs: &[SavingsLogEntry]) {
+    #[cfg(target_arch = "wasm32")]
+    {
+        if let Some(window) = web_sys::window() {
+            if let Ok(Some(storage)) = window.local_storage() {
+                if let Ok(raw_json) = serde_json::to_string(_logs) {
+                    let _ = storage.set_item(STORAGE_KEY_SAVINGS_LOGS, &raw_json);
+                }
+            }
+        }
+    }
+}
+
+/// Menghitung sisa hari hingga target tanggal tercapai
+pub fn calculate_days_remaining(target_date_str: &str) -> Option<i32> {
+    let today_str = get_today_date();
+    #[cfg(target_arch = "wasm32")]
+    {
+        let today_js = js_sys::Date::new(&wasm_bindgen::JsValue::from_str(&today_str));
+        let target_js = js_sys::Date::new(&wasm_bindgen::JsValue::from_str(target_date_str));
+        let diff_ms = target_js.get_time() - today_js.get_time();
+        let days = (diff_ms / 86_400_000.0).round() as i32;
+        Some(days)
+    }
+    #[cfg(not(target_arch = "wasm32"))]
+    {
+        let _ = (today_str, target_date_str);
+        Some(30)
+    }
+}
+
+/// Menghitung rekomendasi tabungan per bulan untuk mencapai sisa target
+pub fn calculate_monthly_savings_needed(target_amount: f64, current_amount: f64, target_date_str: &str) -> Option<f64> {
+    let remaining_amount = target_amount - current_amount;
+    if remaining_amount <= 0.0 {
+        return Some(0.0);
+    }
+    let days_remaining = calculate_days_remaining(target_date_str)?;
+    if days_remaining <= 0 {
+        return Some(remaining_amount);
+    }
+    let months = (days_remaining as f64 / 30.4375).max(0.5);
+    Some(remaining_amount / months)
+}
+
 pub fn calculate_wallet_balance(wallet: &Wallet, transactions: &[Transaction]) -> f64 {
 
     let mut bal = wallet.initial_balance;
@@ -719,6 +868,12 @@ pub struct CatatMoneyBackup {
     pub transactions: Vec<Transaction>,
     pub wallets: Vec<Wallet>,
     pub categories: UserCategories,
+    #[serde(default)]
+    pub budgets: Vec<CategoryBudget>,
+    #[serde(default)]
+    pub savings_goals: Vec<SavingsGoal>,
+    #[serde(default)]
+    pub savings_logs: Vec<SavingsLogEntry>,
 }
 
 pub fn create_backup(
@@ -726,6 +881,9 @@ pub fn create_backup(
     transactions: &[Transaction],
     wallets: &[Wallet],
     categories: &UserCategories,
+    budgets: &[CategoryBudget],
+    savings_goals: &[SavingsGoal],
+    savings_logs: &[SavingsLogEntry],
 ) -> CatatMoneyBackup {
     CatatMoneyBackup {
         version: 1,
@@ -735,6 +893,9 @@ pub fn create_backup(
         transactions: transactions.to_vec(),
         wallets: wallets.to_vec(),
         categories: categories.clone(),
+        budgets: budgets.to_vec(),
+        savings_goals: savings_goals.to_vec(),
+        savings_logs: savings_logs.to_vec(),
     }
 }
 

@@ -16,12 +16,14 @@ use components::icons::{IconUser, IconWallet};
 use components::management::ManagementView;
 use components::onboarding::OnboardingWizard;
 use components::profile_modal::ProfileModal;
+use components::savings::SavingsView;
 use components::wallet_modal::WalletModal;
 use model::{
     format_idr, get_default_categories, load_budgets, load_categories,
-    load_profile, load_theme, load_transactions, load_wallets, reset_all_data, save_budgets,
-    save_categories, save_profile, save_theme, save_transactions, save_wallets,
-    CategoryBudget, ThemeMode, Transaction, TransactionType, UserCategories, UserProfile, Wallet,
+    load_profile, load_savings_goals, load_savings_logs, load_theme, load_transactions, load_wallets,
+    reset_all_data, save_budgets, save_categories, save_profile, save_savings_goals, save_savings_logs,
+    save_theme, save_transactions, save_wallets,
+    CategoryBudget, SavingsGoal, SavingsLogEntry, ThemeMode, Transaction, TransactionType, UserCategories, UserProfile, Wallet,
 };
 
 const APP_STYLE: &str = include_str!("../assets/style.css");
@@ -91,6 +93,10 @@ pub fn App() -> Element {
 
     // State anggaran bulanan (disinkronkan dengan LocalStorage)
     let mut budgets = use_signal(load_budgets);
+
+    // State target tabungan & log kontribusi (disinkronkan dengan LocalStorage)
+    let mut savings_goals = use_signal(load_savings_goals);
+    let mut savings_logs = use_signal(load_savings_logs);
 
     // State navigasi tab aktif (Dashboard, Kalender, Riwayat, Kelola)
     let mut active_tab = use_signal(|| NavTab::Dashboard);
@@ -242,6 +248,12 @@ pub fn App() -> Element {
 
                         save_budgets(&[]);
                         budgets.set(vec![]);
+
+                        save_savings_goals(&[]);
+                        savings_goals.set(vec![]);
+
+                        save_savings_logs(&[]);
+                        savings_logs.set(vec![]);
                     },
                 }
             } else {
@@ -279,11 +291,13 @@ pub fn App() -> Element {
                                     transactions: transactions.read().clone(),
                                     wallets: wallets.read().clone(),
                                     budgets: budgets.read().clone(),
+                                    savings_goals: savings_goals.read().clone(),
                                     on_go_to_history: move |_| active_tab.set(NavTab::History),
                                     on_select_trx: move |trx| selected_detail_trx.set(Some(trx)),
                                     on_open_add_wallet: move |_| is_wallet_modal_open.set(true),
                                     on_go_to_analytics: move |_| active_tab.set(NavTab::Analytics),
                                     on_go_to_budget: move |_| active_tab.set(NavTab::Budget),
+                                    on_go_to_savings: move |_| active_tab.set(NavTab::Savings),
                                 }
                             },
                             NavTab::Analytics => rsx! {
@@ -301,6 +315,20 @@ pub fn App() -> Element {
                                     on_update_budgets: move |new_budgets: Vec<CategoryBudget>| {
                                         save_budgets(&new_budgets);
                                         budgets.set(new_budgets);
+                                    },
+                                }
+                            },
+                            NavTab::Savings => rsx! {
+                                SavingsView {
+                                    savings_goals: savings_goals.read().clone(),
+                                    savings_logs: savings_logs.read().clone(),
+                                    on_update_goals: move |new_goals: Vec<SavingsGoal>| {
+                                        save_savings_goals(&new_goals);
+                                        savings_goals.set(new_goals);
+                                    },
+                                    on_update_logs: move |new_logs: Vec<SavingsLogEntry>| {
+                                        save_savings_logs(&new_logs);
+                                        savings_logs.set(new_logs);
                                     },
                                 }
                             },
@@ -328,6 +356,9 @@ pub fn App() -> Element {
                                     transactions: transactions.read().clone(),
                                     wallets: wallets.read().clone(),
                                     categories: categories.read().clone(),
+                                    budgets: budgets.read().clone(),
+                                    savings_goals: savings_goals.read().clone(),
+                                    savings_logs: savings_logs.read().clone(),
                                     current_theme: *theme.read(),
                                     on_change_theme: move |new_theme: ThemeMode| {
                                         theme.set(new_theme);
@@ -350,8 +381,8 @@ pub fn App() -> Element {
                                             name: cat_name,
                                         }));
                                     },
-                                    on_restore_data: move |data: (Option<UserProfile>, Vec<Transaction>, Vec<Wallet>, UserCategories)| {
-                                        let (new_prof, new_trxs, new_wallets, new_cats) = data;
+                                    on_restore_data: move |data: (Option<UserProfile>, Vec<Transaction>, Vec<Wallet>, UserCategories, Vec<CategoryBudget>, Vec<SavingsGoal>, Vec<SavingsLogEntry>)| {
+                                        let (new_prof, new_trxs, new_wallets, new_cats, new_budgets, new_goals, new_logs) = data;
                                         if let Some(prof) = new_prof {
                                             save_profile(&prof);
                                             profile.set(Some(prof));
@@ -369,6 +400,12 @@ pub fn App() -> Element {
                                         wallets.set(new_wallets);
                                         save_categories(&new_cats);
                                         categories.set(new_cats);
+                                        save_budgets(&new_budgets);
+                                        budgets.set(new_budgets);
+                                        save_savings_goals(&new_goals);
+                                        savings_goals.set(new_goals);
+                                        save_savings_logs(&new_logs);
+                                        savings_logs.set(new_logs);
                                     },
                                     on_request_reset_all_data: move |_| {
                                         pending_delete.set(Some(PendingDelete::AllData));
@@ -520,8 +557,11 @@ pub fn App() -> Element {
                                 categories.set(get_default_categories());
                                 save_budgets(&[]);
                                 budgets.set(vec![]);
+                                save_savings_goals(&[]);
+                                savings_goals.set(vec![]);
+                                save_savings_logs(&[]);
+                                savings_logs.set(vec![]);
                                 pending_delete.set(None);
-
                             },
                             on_cancel: move |_| pending_delete.set(None),
                         }
