@@ -476,6 +476,24 @@ pub fn IconLineChart(#[props(default = "18")] size: &'static str) -> Element {
 }
 
 #[component]
+pub fn IconActivity(#[props(default = "18")] size: &'static str) -> Element {
+    rsx! {
+        svg {
+            width: "{size}",
+            height: "{size}",
+            view_box: "0 0 24 24",
+            fill: "none",
+            stroke: "currentColor",
+            stroke_width: "1.75",
+            stroke_linecap: "round",
+            stroke_linejoin: "round",
+            path { d: "M22 12h-4l-3 9L9 3l-3 9H2" }
+        }
+    }
+}
+
+
+#[component]
 pub fn IconGift(#[props(default = "18")] size: &'static str) -> Element {
     rsx! {
         svg {

@@ -1,15 +1,18 @@
 use dioxus::prelude::*;
 use crate::components::icons::{
-    CategoryIcon, IconArrowDownRight, IconArrowUpRight, IconPieChart, IconReceipt,
-    IconTrendingDown, IconTrendingUp, IconWallet, WalletIcon,
+    CategoryIcon, IconActivity, IconArrowDownRight, IconArrowUpRight,
+    IconPieChart, IconReceipt, IconTrendingDown, IconTrendingUp, IconWallet, WalletIcon,
 };
 use crate::model::{
-    format_idr, get_today_date, Transaction, TransactionType, Wallet,
+    format_idr, get_date_days_ago, get_start_of_this_week, get_today_date,
+    Transaction, TransactionType, Wallet,
 };
 use std::collections::{BTreeMap, HashMap};
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum AnalyticsTimeframe {
+    Today,
+    ThisWeek,
     ThisMonth,
     Last30Days,
     ThisYear,
@@ -19,6 +22,8 @@ pub enum AnalyticsTimeframe {
 impl AnalyticsTimeframe {
     pub fn as_str(&self) -> &'static str {
         match self {
+            Self::Today => "Hari Ini",
+            Self::ThisWeek => "Minggu Ini",
             Self::ThisMonth => "Bulan Ini",
             Self::Last30Days => "30 Hari",
             Self::ThisYear => "Tahun Ini",
@@ -59,21 +64,23 @@ pub fn AnalyticsView(
     let today = get_today_date(); // YYYY-MM-DD
     let current_year = if today.len() >= 4 { &today[0..4] } else { "2026" };
     let current_month_prefix = if today.len() >= 7 { &today[0..7] } else { "2026-10" };
+    let start_of_week = get_start_of_this_week();
+    let thirty_days_ago = get_date_days_ago(30);
 
     // Saring transaksi berdasarkan timeframe yang dipilih
     let filtered_transactions: Vec<Transaction> = transactions
         .iter()
         .filter(|t| match *timeframe.read() {
+            AnalyticsTimeframe::Today => t.date == today,
+            AnalyticsTimeframe::ThisWeek => t.date >= start_of_week && t.date <= today,
             AnalyticsTimeframe::ThisMonth => t.date.starts_with(current_month_prefix),
+            AnalyticsTimeframe::Last30Days => t.date >= thirty_days_ago && t.date <= today,
             AnalyticsTimeframe::ThisYear => t.date.starts_with(current_year),
-            AnalyticsTimeframe::Last30Days => {
-                // Sederhana: bandingkan jika ada dalam 30 hari terakhir atau 30 entri terbaru
-                true
-            }
             AnalyticsTimeframe::AllTime => true,
         })
         .cloned()
         .collect();
+
 
     // Hitung total pemasukan, pengeluaran, dan arus kas bersih
     let mut total_income = 0.0;
@@ -232,6 +239,231 @@ pub fn AnalyticsView(
         }
     }
 
+    // --- KALKULASI KURVA PORTOFOLIO KAS (CRYPTO-STYLE AREA SPLINE) ---
+    let mut all_trx_sorted = transactions.clone();
+    all_trx_sorted.sort_by(|a, b| {
+        let date_cmp = a.date.cmp(&b.date);
+        if date_cmp == std::cmp::Ordering::Equal {
+            a.time.cmp(&b.time)
+        } else {
+            date_cmp
+        }
+    });
+
+    let initial_all_wallets: f64 = wallets.iter().map(|w| w.initial_balance).sum();
+
+    let (tf_start_date, is_intraday) = match *timeframe.read() {
+        AnalyticsTimeframe::Today => (today.clone(), true),
+        AnalyticsTimeframe::ThisWeek => (start_of_week.clone(), false),
+        AnalyticsTimeframe::ThisMonth => (format!("{}-01", current_month_prefix), false),
+        AnalyticsTimeframe::Last30Days => (thirty_days_ago.clone(), false),
+        AnalyticsTimeframe::ThisYear => (format!("{}-01-01", current_year), false),
+        AnalyticsTimeframe::AllTime => {
+            let first_date = all_trx_sorted.first().map(|t| t.date.clone()).unwrap_or_else(|| today.clone());
+            (first_date, false)
+        }
+    };
+
+    let mut running_balance = initial_all_wallets;
+    for t in &all_trx_sorted {
+        if t.date < tf_start_date {
+            match t.transaction_type {
+                TransactionType::Income => running_balance += t.amount,
+                TransactionType::Expense => running_balance -= t.amount,
+                TransactionType::Transfer => {
+                    if let Some(fee) = t.admin_fee {
+                        running_balance -= fee;
+                    }
+                }
+            }
+        }
+    }
+    let period_opening_balance = running_balance;
+
+    let mut crypto_points: Vec<(String, f64)> = Vec::new();
+
+    if is_intraday {
+        crypto_points.push(("Awal".to_string(), period_opening_balance));
+        for t in &all_trx_sorted {
+            if t.date == today {
+                match t.transaction_type {
+                    TransactionType::Income => running_balance += t.amount,
+                    TransactionType::Expense => running_balance -= t.amount,
+                    TransactionType::Transfer => {
+                        if let Some(fee) = t.admin_fee {
+                            running_balance -= fee;
+                        }
+                    }
+                }
+                let time_label = if t.time.len() >= 5 { t.time[0..5].to_string() } else { t.time.clone() };
+                crypto_points.push((time_label, running_balance));
+            }
+        }
+        if crypto_points.len() == 1 {
+            crypto_points.push(("Sekarang".to_string(), running_balance));
+        }
+    } else {
+        let start_label = if tf_start_date.len() >= 10 {
+            format!("{}/{}", &tf_start_date[8..10], &tf_start_date[5..7])
+        } else {
+            "Awal".to_string()
+        };
+        crypto_points.push((start_label, period_opening_balance));
+
+        let mut date_groups: BTreeMap<String, Vec<&Transaction>> = BTreeMap::new();
+        for t in &all_trx_sorted {
+            if t.date >= tf_start_date && t.date <= today {
+                date_groups.entry(t.date.clone()).or_default().push(t);
+            }
+        }
+
+        let mut last_date_in_trx = String::new();
+        for (d, trxs) in date_groups {
+            for t in trxs {
+                match t.transaction_type {
+                    TransactionType::Income => running_balance += t.amount,
+                    TransactionType::Expense => running_balance -= t.amount,
+                    TransactionType::Transfer => {
+                        if let Some(fee) = t.admin_fee {
+                            running_balance -= fee;
+                        }
+                    }
+                }
+            }
+            let label = if d.len() >= 10 {
+                format!("{}/{}", &d[8..10], &d[5..7])
+            } else {
+                d.clone()
+            };
+            last_date_in_trx = d;
+            crypto_points.push((label, running_balance));
+        }
+
+        if last_date_in_trx != today {
+            let today_label = if today.len() >= 10 {
+                format!("{}/{}", &today[8..10], &today[5..7])
+            } else {
+                "Hari Ini".to_string()
+            };
+            crypto_points.push((today_label, running_balance));
+        }
+    }
+
+    if crypto_points.len() < 2 {
+        crypto_points.push(("Kini".to_string(), running_balance));
+    }
+
+    let period_start_bal = crypto_points.first().map(|p| p.1).unwrap_or(0.0);
+    let period_current_bal = crypto_points.last().map(|p| p.1).unwrap_or(0.0);
+    let period_delta = period_current_bal - period_start_bal;
+    let period_pct = if period_start_bal.abs() > 0.001 {
+        (period_delta / period_start_bal.abs() * 100.0).clamp(-999.0, 999.0)
+    } else {
+        0.0
+    };
+    let is_bullish = period_delta >= 0.0;
+    let line_color = if is_bullish { "#10b981" } else { "#f43f5e" };
+    let glow_class = if is_bullish { "crypto-line-glow-bullish" } else { "crypto-line-glow-bearish" };
+
+    let mut min_val = f64::MAX;
+    let mut max_val = f64::MIN;
+    let mut ath_idx = 0;
+    let mut atl_idx = 0;
+
+    for (i, (_, val)) in crypto_points.iter().enumerate() {
+        if *val > max_val {
+            max_val = *val;
+            ath_idx = i;
+        }
+        if *val < min_val {
+            min_val = *val;
+            atl_idx = i;
+        }
+    }
+    if min_val == f64::MAX { min_val = 0.0; }
+    if max_val == f64::MIN { max_val = 100_000.0; }
+
+    let spread = max_val - min_val;
+    let buffer = if spread > 0.0 { spread * 0.15 } else { 50_000.0 };
+    let scale_min = (min_val - buffer).max(0.0);
+    let scale_max = max_val + buffer;
+    let scale_range = (scale_max - scale_min).max(10_000.0);
+
+    let pad_x = 28.0;
+    let pad_top = 26.0;
+    let pad_bottom = 34.0;
+    let svg_w = 680.0;
+    let svg_h = 200.0;
+    let plot_w = svg_w - 2.0 * pad_x;
+    let plot_h = svg_h - pad_top - pad_bottom;
+    let baseline_y = pad_top + plot_h;
+
+    let n_pts = crypto_points.len();
+    let coords: Vec<(f64, f64)> = crypto_points
+        .iter()
+        .enumerate()
+        .map(|(i, (_, val))| {
+            let x = if n_pts > 1 {
+                pad_x + (i as f64 / (n_pts - 1) as f64) * plot_w
+            } else {
+                pad_x + plot_w / 2.0
+            };
+            let y = pad_top + plot_h * (1.0 - ((*val - scale_min) / scale_range).clamp(0.0, 1.0));
+            (x, y)
+        })
+        .collect();
+
+    let mut line_path = String::new();
+    if !coords.is_empty() {
+        line_path.push_str(&format!("M {:.1} {:.1}", coords[0].0, coords[0].1));
+        for i in 0..coords.len() - 1 {
+            let p0 = coords[i];
+            let p1 = coords[i + 1];
+            let mid_x = (p0.0 + p1.0) / 2.0;
+            line_path.push_str(&format!(
+                " C {:.1} {:.1}, {:.1} {:.1}, {:.1} {:.1}",
+                mid_x, p0.1, mid_x, p1.1, p1.0, p1.1
+            ));
+        }
+    }
+
+    let area_path = if !coords.is_empty() {
+        let first = coords[0];
+        let last = coords[coords.len() - 1];
+        format!(
+            "{} L {:.1} {:.1} L {:.1} {:.1} Z",
+            line_path, last.0, baseline_y, first.0, baseline_y
+        )
+    } else {
+        String::new()
+    };
+
+    let ath_coord = coords.get(ath_idx).cloned().unwrap_or((pad_x, pad_top));
+    let atl_coord = coords.get(atl_idx).cloned().unwrap_or((pad_x, baseline_y));
+    let last_coord = coords.last().cloned().unwrap_or((pad_x, pad_top));
+    let last_idx = n_pts.saturating_sub(1);
+
+    let val_75 = scale_min + 0.75 * scale_range;
+    let val_50 = scale_min + 0.50 * scale_range;
+    let val_25 = scale_min + 0.25 * scale_range;
+    let y_75 = pad_top + plot_h * 0.25;
+    let y_50 = pad_top + plot_h * 0.50;
+    let y_25 = pad_top + plot_h * 0.75;
+
+    let mut x_labels: Vec<(f64, String)> = Vec::new();
+    if n_pts <= 6 {
+        for (i, (lbl, _)) in crypto_points.iter().enumerate() {
+            x_labels.push((coords[i].0, lbl.clone()));
+        }
+    } else {
+        let step = (n_pts as f64 / 4.0).max(1.0);
+        for k in 0..5 {
+            let idx = ((k as f64 * step).round() as usize).min(n_pts - 1);
+            x_labels.push((coords[idx].0, crypto_points[idx].0.clone()));
+        }
+        x_labels.dedup_by(|a, b| (a.0 - b.0).abs() < 35.0);
+    }
+
     rsx! {
         div { class: "analytics-container",
             // Header Halaman & Selector Rentang Waktu
@@ -243,9 +475,16 @@ pub fn AnalyticsView(
                     }
                 }
 
-                // Timeframe Selector Pill
+                // Timeframe Selector Pill (Scrollable horizontal di mobile)
                 div { class: "analytics-timeframe-selector inline-flex p-1 rounded-xl bg-[var(--bg-card)] border border-[var(--border-subtle)]",
-                    for tf in [AnalyticsTimeframe::ThisMonth, AnalyticsTimeframe::Last30Days, AnalyticsTimeframe::ThisYear, AnalyticsTimeframe::AllTime] {
+                    for tf in [
+                        AnalyticsTimeframe::Today,
+                        AnalyticsTimeframe::ThisWeek,
+                        AnalyticsTimeframe::ThisMonth,
+                        AnalyticsTimeframe::Last30Days,
+                        AnalyticsTimeframe::ThisYear,
+                        AnalyticsTimeframe::AllTime,
+                    ] {
                         button {
                             r#type: "button",
                             key: "{tf.as_str()}",
@@ -264,86 +503,254 @@ pub fn AnalyticsView(
 
                 // 4 Executive Financial Health KPI Cards
                 div { class: "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6",
-                // Kartu 1: Arus Kas Bersih (Net Cashflow)
-                div { class: "p-4 rounded-xl bg-[var(--bg-card)] border border-[var(--border-subtle)] flex flex-col justify-between",
-                    div { class: "flex items-center justify-between mb-2",
-                        span { class: "text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wider", "Arus Kas Bersih" }
-                        if net_cashflow >= 0.0 {
-                            span { class: "inline-flex items-center gap-1 text-[11px] font-semibold text-[var(--positive)] bg-[var(--positive-bg)] px-2 py-0.5 rounded-full border border-[var(--positive-border)]",
-                                IconTrendingUp { size: "12" }
-                                "Surplus"
+                    // Kartu 1: Arus Kas Bersih (Net Cashflow)
+                    div { class: "p-4 rounded-xl bg-[var(--bg-card)] border border-[var(--border-subtle)] flex flex-col justify-between",
+                        div { class: "flex items-center justify-between mb-2",
+                            span { class: "text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wider", "Arus Kas Bersih" }
+                            if net_cashflow >= 0.0 {
+                                span { class: "inline-flex items-center gap-1 text-[11px] font-semibold text-[var(--positive)] bg-[var(--positive-bg)] px-2 py-0.5 rounded-full border border-[var(--positive-border)]",
+                                    IconTrendingUp { size: "12" }
+                                    "Surplus"
+                                }
+                            } else {
+                                span { class: "inline-flex items-center gap-1 text-[11px] font-semibold text-[var(--negative)] bg-[var(--negative-bg)] px-2 py-0.5 rounded-full border border-[var(--negative-border)]",
+                                    IconTrendingDown { size: "12" }
+                                    "Defisit"
+                                }
                             }
-                        } else {
-                            span { class: "inline-flex items-center gap-1 text-[11px] font-semibold text-[var(--negative)] bg-[var(--negative-bg)] px-2 py-0.5 rounded-full border border-[var(--negative-border)]",
-                                IconTrendingDown { size: "12" }
-                                "Defisit"
+                        }
+                        div { class: "{net_cashflow_class}",
+                            "{net_cashflow_str}"
+                        }
+                        p { class: "text-[11px] text-[var(--text-muted)] mt-1.5",
+                            "Total pemasukan dikurangi total pengeluaran periode ini."
+                        }
+                    }
+
+                    // Kartu 2: Rasio Tabungan (Savings Rate)
+                    div { class: "p-4 rounded-xl bg-[var(--bg-card)] border border-[var(--border-subtle)] flex flex-col justify-between",
+                        div { class: "flex items-center justify-between mb-2",
+                            span { class: "text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wider", "Tingkat Tabungan" }
+                            span { class: "text-xs font-bold tabular-numbers text-[var(--text-primary)]",
+                                "{savings_rate:.1}%"
+                            }
+                        }
+                        div { class: "w-full bg-[var(--bg-surface-subtle)] rounded-full h-2 overflow-hidden my-1.5",
+                            div {
+                                class: if savings_rate >= 20.0 { "bg-[var(--positive)] h-full rounded-full transition-all" } else if savings_rate > 0.0 { "bg-[var(--amber-500)] h-full rounded-full transition-all" } else { "bg-[var(--negative)] h-full rounded-full transition-all" },
+                                style: "width: {savings_rate.max(0.0)}%;",
+                            }
+                        }
+                        p { class: "text-[11px] text-[var(--text-muted)] mt-1",
+                            if savings_rate >= 30.0 {
+                                "Kondisi tabungan prima di atas target 30%."
+                            } else if savings_rate > 0.0 {
+                                "Masih menghasilkan surplus positif."
+                            } else {
+                                "Pengeluaran melebihi total pemasukan."
                             }
                         }
                     }
-                    div { class: "{net_cashflow_class}",
-                        "{net_cashflow_str}"
+
+                    // Kartu 3: Total Pemasukan
+                    div { class: "p-4 rounded-xl bg-[var(--bg-card)] border border-[var(--border-subtle)] flex flex-col justify-between",
+                        div { class: "flex items-center justify-between mb-2",
+                            span { class: "text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wider", "Total Pemasukan" }
+                            IconArrowUpRight { size: "14" }
+                        }
+                        div { class: "text-xl font-bold tabular-numbers text-[var(--positive)]",
+                            "{format_idr(total_income)}"
+                        }
+                        p { class: "text-[11px] text-[var(--text-muted)] mt-1.5",
+                            "{income_count} kali transaksi masuk"
+                        }
                     }
-                    p { class: "text-[11px] text-[var(--text-muted)] mt-1.5",
-                        "Total pemasukan dikurangi total pengeluaran periode ini."
+
+                    // Kartu 4: Total Pengeluaran
+                    div { class: "p-4 rounded-xl bg-[var(--bg-card)] border border-[var(--border-subtle)] flex flex-col justify-between",
+                        div { class: "flex items-center justify-between mb-2",
+                            span { class: "text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wider", "Total Pengeluaran" }
+                            IconArrowDownRight { size: "14" }
+                        }
+                        div { class: "text-xl font-bold tabular-numbers text-[var(--negative)]",
+                            "{format_idr(total_expense)}"
+                        }
+                        p { class: "text-[11px] text-[var(--text-muted)] mt-1.5",
+                            "{expense_count} kali transaksi keluar"
+                        }
                     }
                 }
 
-                // Kartu 2: Rasio Tabungan (Savings Rate)
-                div { class: "p-4 rounded-xl bg-[var(--bg-card)] border border-[var(--border-subtle)] flex flex-col justify-between",
-                    div { class: "flex items-center justify-between mb-2",
-                        span { class: "text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wider", "Tingkat Tabungan" }
-                        span { class: "text-xs font-bold tabular-numbers text-[var(--text-primary)]",
-                            "{savings_rate:.1}%"
-                        }
-                    }
-                    div { class: "w-full bg-[var(--bg-surface-subtle)] rounded-full h-2 overflow-hidden my-1.5",
+                // Card Kurva Portofolio Likuiditas Kas (Crypto / TradingView Style Area Spline)
+                div { class: "crypto-chart-panel mb-6",
+                    // Header: Judul & Metrik Utama ala TradingView / Coinbase
+                    div { class: "flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4",
                         div {
-                            class: if savings_rate >= 20.0 { "bg-[var(--positive)] h-full rounded-full transition-all" } else if savings_rate > 0.0 { "bg-[var(--amber-500)] h-full rounded-full transition-all" } else { "bg-[var(--negative)] h-full rounded-full transition-all" },
-                            style: "width: {savings_rate.max(0.0)}%;",
+                            div { class: "flex items-center gap-2",
+                                span { class: "w-7 h-7 rounded-lg bg-[var(--bg-surface-subtle)] border border-[var(--border-subtle)] flex items-center justify-center text-[var(--text-primary)]",
+                                    IconActivity { size: "15" }
+                                }
+                                div {
+                                    h3 { class: "text-sm font-bold text-[var(--text-primary)]", "Kurva Likuiditas & Portofolio Kas" }
+                                    p { class: "text-[11px] text-[var(--text-muted)]", "Pergerakan saldo akumulatif berjalan sepanjang periode" }
+                                }
+                            }
+                        }
+                        div { class: "flex items-center gap-3 self-start sm:self-auto",
+                            div { class: "text-left sm:text-right",
+                                div { class: "text-lg font-bold tabular-numbers text-[var(--text-primary)]",
+                                    "{format_idr(period_current_bal)}"
+                                }
+                                div { class: "flex items-center gap-1.5 text-xs font-semibold tabular-numbers",
+                                    if is_bullish {
+                                        span { class: "inline-flex items-center gap-1 text-[11px] font-semibold text-[var(--positive)] bg-[var(--positive-bg)] px-2 py-0.5 rounded-full border border-[var(--positive-border)]",
+                                            IconTrendingUp { size: "11" }
+                                            "+{format_idr(period_delta)} (+{period_pct:.1}%)"
+                                        }
+                                    } else {
+                                        span { class: "inline-flex items-center gap-1 text-[11px] font-semibold text-[var(--negative)] bg-[var(--negative-bg)] px-2 py-0.5 rounded-full border border-[var(--negative-border)]",
+                                            IconTrendingDown { size: "11" }
+                                            "{format_idr(period_delta)} ({period_pct:.1}%)"
+                                        }
+                                    }
+                                }
+                            }
                         }
                     }
-                    p { class: "text-[11px] text-[var(--text-muted)] mt-1",
-                        if savings_rate >= 30.0 {
-                            "Kondisi tabungan prima di atas target 30%."
-                        } else if savings_rate > 0.0 {
-                            "Masih menghasilkan surplus positif."
-                        } else {
-                            "Pengeluaran melebihi total pemasukan."
+
+                    // SVG Area Curve
+                    div { class: "svg-chart-wrapper my-1 overflow-x-auto",
+                        svg {
+                            view_box: "0 0 680 200",
+                            class: "w-full h-auto overflow-visible min-w-[500px]",
+                            defs {
+                                linearGradient {
+                                    id: "cryptoAreaGrad",
+                                    x1: "0",
+                                    y1: "0",
+                                    x2: "0",
+                                    y2: "1",
+                                    stop { offset: "0%", stop_color: "{line_color}", stop_opacity: "0.32" }
+                                    stop { offset: "75%", stop_color: "{line_color}", stop_opacity: "0.04" }
+                                    stop { offset: "100%", stop_color: "{line_color}", stop_opacity: "0.0" }
+                                }
+                            }
+
+                            // Gridlines Horizontal & Labels
+                            line { x1: "{pad_x}", y1: "{y_75}", x2: "{680.0 - pad_x}", y2: "{y_75}", class: "crypto-gridline" }
+                            text { x: "{680.0 - pad_x}", y: "{y_75 - 4.0}", text_anchor: "end", class: "fill-[var(--text-muted)] text-[9px] tabular-numbers", "{format_idr(val_75)}" }
+
+                            line { x1: "{pad_x}", y1: "{y_50}", x2: "{680.0 - pad_x}", y2: "{y_50}", class: "crypto-gridline" }
+                            text { x: "{680.0 - pad_x}", y: "{y_50 - 4.0}", text_anchor: "end", class: "fill-[var(--text-muted)] text-[9px] tabular-numbers", "{format_idr(val_50)}" }
+
+                            line { x1: "{pad_x}", y1: "{y_25}", x2: "{680.0 - pad_x}", y2: "{y_25}", class: "crypto-gridline" }
+                            text { x: "{680.0 - pad_x}", y: "{y_25 - 4.0}", text_anchor: "end", class: "fill-[var(--text-muted)] text-[9px] tabular-numbers", "{format_idr(val_25)}" }
+
+                            // Baseline
+                            line { x1: "{pad_x}", y1: "{baseline_y}", x2: "{680.0 - pad_x}", y2: "{baseline_y}", class: "crypto-baseline" }
+
+                            // Area Path
+                            path {
+                                d: "{area_path}",
+                                fill: "url(#cryptoAreaGrad)",
+                            }
+
+                            // Main Line Path
+                            path {
+                                d: "{line_path}",
+                                fill: "none",
+                                stroke: "{line_color}",
+                                stroke_width: "2.5",
+                                stroke_linecap: "round",
+                                stroke_linejoin: "round",
+                                class: "{glow_class}",
+                            }
+
+                            // ATH Marker (Titik Tertinggi)
+                            if ath_idx != last_idx || coords.len() > 2 {
+                                g {
+                                    circle { cx: "{ath_coord.0}", cy: "{ath_coord.1}", r: "4.5", fill: "var(--positive)", stroke: "var(--bg-card)", stroke_width: "2" }
+                                    text {
+                                        x: "{ath_coord.0}",
+                                        y: "{ath_coord.1 - 9.0}",
+                                        text_anchor: "middle",
+                                        class: "fill-[var(--positive)] text-[9px] font-bold",
+                                        "ATH"
+                                    }
+                                }
+                            }
+
+                            // ATL Marker (Titik Terendah)
+                            if atl_idx != ath_idx && (atl_idx != last_idx || coords.len() > 2) {
+                                g {
+                                    circle { cx: "{atl_coord.0}", cy: "{atl_coord.1}", r: "4.5", fill: "var(--negative)", stroke: "var(--bg-card)", stroke_width: "2" }
+                                    text {
+                                        x: "{atl_coord.0}",
+                                        y: "{atl_coord.1 + 16.0}",
+                                        text_anchor: "middle",
+                                        class: "fill-[var(--negative)] text-[9px] font-bold",
+                                        "ATL"
+                                    }
+                                }
+                            }
+
+                            // Titik Terakhir (Live Pulse Indicator)
+                            g {
+                                circle {
+                                    cx: "{last_coord.0}",
+                                    cy: "{last_coord.1}",
+                                    r: "7",
+                                    fill: "{line_color}",
+                                    class: "crypto-pulse-glow",
+                                }
+                                circle {
+                                    cx: "{last_coord.0}",
+                                    cy: "{last_coord.1}",
+                                    r: "4",
+                                    fill: "{line_color}",
+                                    stroke: "var(--bg-card)",
+                                    stroke_width: "1.5",
+                                }
+                            }
+
+                            // Label Sumbu X
+                            for (label_x, label_text) in x_labels.iter() {
+                                text {
+                                    key: "{label_text}",
+                                    x: "{label_x}",
+                                    y: "{baseline_y + 18.0}",
+                                    text_anchor: "middle",
+                                    class: "fill-[var(--text-muted)] text-[10px]",
+                                    "{label_text}"
+                                }
+                            }
+                        }
+                    }
+
+                    // Footer Stats Ringkas
+                    div { class: "grid grid-cols-2 sm:grid-cols-4 gap-3 pt-3 mt-3 border-t border-[var(--border-subtle)] text-xs",
+                        div {
+                            span { class: "text-[10px] text-[var(--text-muted)] block", "Saldo Awal Periode" }
+                            span { class: "font-semibold tabular-numbers text-[var(--text-primary)]", "{format_idr(period_start_bal)}" }
+                        }
+                        div {
+                            span { class: "text-[10px] text-[var(--text-muted)] block", "Puncak Tertinggi (ATH)" }
+                            span { class: "font-semibold tabular-numbers text-[var(--positive)]", "{format_idr(max_val)}" }
+                        }
+                        div {
+                            span { class: "text-[10px] text-[var(--text-muted)] block", "Dasar Terendah (ATL)" }
+                            span { class: "font-semibold tabular-numbers text-[var(--negative)]", "{format_idr(min_val)}" }
+                        }
+                        div {
+                            span { class: "text-[10px] text-[var(--text-muted)] block", "Rentang Fluktuasi" }
+                            span { class: "font-semibold tabular-numbers text-[var(--text-secondary)]", "{format_idr(spread)}" }
                         }
                     }
                 }
 
-                // Kartu 3: Total Pemasukan
-                div { class: "p-4 rounded-xl bg-[var(--bg-card)] border border-[var(--border-subtle)] flex flex-col justify-between",
-                    div { class: "flex items-center justify-between mb-2",
-                        span { class: "text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wider", "Total Pemasukan" }
-                        IconArrowUpRight { size: "14" }
-                    }
-                    div { class: "text-xl font-bold tabular-numbers text-[var(--positive)]",
-                        "{format_idr(total_income)}"
-                    }
-                    p { class: "text-[11px] text-[var(--text-muted)] mt-1.5",
-                        "{income_count} kali transaksi masuk"
-                    }
-                }
+                // Grid Bagian Tengah: SVG Donut Chart Kategori & Tren Arus Kas
+                div { class: "grid grid-cols-1 lg:grid-cols-12 gap-6 mb-6",
 
-                // Kartu 4: Total Pengeluaran
-                div { class: "p-4 rounded-xl bg-[var(--bg-card)] border border-[var(--border-subtle)] flex flex-col justify-between",
-                    div { class: "flex items-center justify-between mb-2",
-                        span { class: "text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wider", "Total Pengeluaran" }
-                        IconArrowDownRight { size: "14" }
-                    }
-                    div { class: "text-xl font-bold tabular-numbers text-[var(--negative)]",
-                        "{format_idr(total_expense)}"
-                    }
-                    p { class: "text-[11px] text-[var(--text-muted)] mt-1.5",
-                        "{expense_count} kali transaksi keluar"
-                    }
-                }
-            }
-
-            // Grid Bagian Tengah: SVG Donut Chart Kategori & Tren Arus Kas
-            div { class: "grid grid-cols-1 lg:grid-cols-12 gap-6 mb-6",
                 // Kolom Kiri (5 kolom): Donut Chart & Breakdown Alokasi
                 div { class: "lg:col-span-5 p-5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-subtle)] flex flex-col",
                     div { class: "flex items-center justify-between mb-4",

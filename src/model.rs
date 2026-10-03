@@ -200,6 +200,50 @@ pub fn get_today_date() -> String {
     }
 }
 
+/// Mendapatkan tanggal N hari yang lalu dalam format YYYY-MM-DD
+pub fn get_date_days_ago(days: i32) -> String {
+    #[cfg(target_arch = "wasm32")]
+    {
+        let date = js_sys::Date::new_0();
+        let ms = date.get_time() - (days as f64 * 86_400_000.0);
+        let past = js_sys::Date::new(&wasm_bindgen::JsValue::from_f64(ms));
+        format!(
+            "{:04}-{:02}-{:02}",
+            past.get_full_year(),
+            past.get_month() + 1,
+            past.get_date()
+        )
+    }
+    #[cfg(not(target_arch = "wasm32"))]
+    {
+        let _ = days;
+        "2026-09-02".to_string()
+    }
+}
+
+/// Mendapatkan tanggal hari Senin dari minggu berjalan dalam format YYYY-MM-DD
+pub fn get_start_of_this_week() -> String {
+    #[cfg(target_arch = "wasm32")]
+    {
+        let date = js_sys::Date::new_0();
+        let day_of_week = date.get_day() as i32; // 0 = Minggu, 1 = Senin, ..., 6 = Sabtu
+        let diff_to_monday = if day_of_week == 0 { 6 } else { day_of_week - 1 };
+        let ms = date.get_time() - (diff_to_monday as f64 * 86_400_000.0);
+        let monday = js_sys::Date::new(&wasm_bindgen::JsValue::from_f64(ms));
+        format!(
+            "{:04}-{:02}-{:02}",
+            monday.get_full_year(),
+            monday.get_month() + 1,
+            monday.get_date()
+        )
+    }
+    #[cfg(not(target_arch = "wasm32"))]
+    {
+        "2026-09-28".to_string()
+    }
+}
+
+
 /// Mendapatkan waktu saat ini dengan jam, menit, dan detik (HH:mm:ss)
 pub fn get_current_time() -> String {
     #[cfg(target_arch = "wasm32")]

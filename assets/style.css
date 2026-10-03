@@ -2558,6 +2558,67 @@ input[type="time"]::-webkit-calendar-picker-indicator:hover {
   }
 }
 
+/* Timeframe Selector Scrollable on Mobile */
+.analytics-timeframe-selector {
+  display: inline-flex;
+  max-width: 100%;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-x;
+}
+
+.analytics-timeframe-selector::-webkit-scrollbar {
+  display: none;
+}
+
+/* Crypto-style Portfolio Liquidity Curve */
+.crypto-chart-panel {
+  position: relative;
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: 1rem;
+  padding: 1.25rem 1.5rem;
+  overflow: hidden;
+}
+
+.crypto-line-glow-bullish {
+  filter: drop-shadow(0 4px 12px rgba(16, 185, 129, 0.4));
+}
+
+.crypto-line-glow-bearish {
+  filter: drop-shadow(0 4px 12px rgba(244, 63, 94, 0.4));
+}
+
+.crypto-gridline {
+  stroke: var(--border-subtle);
+  stroke-dasharray: 4 4;
+  stroke-width: 1;
+  opacity: 0.6;
+}
+
+.crypto-baseline {
+  stroke: var(--border-color);
+  stroke-width: 1;
+}
+
+.crypto-pulse-glow {
+  transform-origin: center;
+  animation: cryptoPulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes cryptoPulse {
+  0%, 100% {
+    opacity: 0.7;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.15;
+    transform: scale(2.2);
+  }
+}
+
+
 
 
 
