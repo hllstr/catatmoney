@@ -2213,17 +2213,15 @@ input[type="time"]::-webkit-calendar-picker-indicator:hover {
     height: 4px;
   }
 
-  /* 5. Kelola (Pusat Manajemen Data) on Mobile */
+  /* 5. Kelola (Pusat Manajemen Data) on Mobile: Symmetrical 2-Column Grid */
   .manage-subtabs-bar {
-    display: flex;
-    flex-wrap: nowrap;
-    overflow-x: auto;
-    gap: 0.35rem;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.4rem;
     padding: 0.35rem;
-    scrollbar-width: none;
-    -ms-overflow-style: none;
-    -webkit-overflow-scrolling: touch;
-    touch-action: pan-x;
+    background: var(--bg-surface-subtle);
+    border-radius: 10px;
+    border: 1px solid var(--border-subtle);
   }
 
   .manage-subtabs-bar::-webkit-scrollbar {
@@ -2231,23 +2229,33 @@ input[type="time"]::-webkit-calendar-picker-indicator:hover {
   }
 
   .manage-subtabs-bar > button:last-child {
-    grid-column: auto;
+    grid-column: span 1;
   }
 
   .manage-tab-btn {
-    flex: 0 0 auto;
-    padding: 0.5rem 0.75rem;
-    font-size: 0.75rem;
+    display: flex;
+    align-items: center;
     justify-content: center;
-    text-align: center;
-    width: auto;
+    gap: 0.4rem;
+    padding: 0.6rem 0.5rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    width: 100%;
     border-radius: 8px;
+    text-align: center;
+    transition: all 0.15s ease;
+  }
+
+  .manage-tab-btn svg {
+    flex-shrink: 0;
+    width: 14px;
+    height: 14px;
   }
 
   .manage-tab-btn span {
     white-space: nowrap;
-    overflow: visible;
-    text-overflow: clip;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   .tab-label-full {

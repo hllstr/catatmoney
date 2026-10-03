@@ -99,7 +99,8 @@ pub fn ManagementView(
                         wallet_error.set(None);
                     },
                     IconWallet { size: "15" }
-                    span { "Sumber Dana ({wallets.len()})" }
+                    span { class: "tab-label-full", "Sumber Dana ({wallets.len()})" }
+                    span { class: "tab-label-short", "Sumber Dana ({wallets.len()})" }
                 }
                 button {
                     r#type: "button",
@@ -142,7 +143,7 @@ pub fn ManagementView(
                         IconSun { size: "15" }
                     }
                     span { class: "tab-label-full", "Tema & Tampilan" }
-                    span { class: "tab-label-short", "Tema" }
+                    span { class: "tab-label-short", "Tema Tampilan" }
                 }
                 button {
                     r#type: "button",
