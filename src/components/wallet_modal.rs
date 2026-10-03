@@ -2,7 +2,7 @@ use dioxus::prelude::*;
 use crate::components::icons::{
     IconBanknote, IconCreditCard, IconLandmark, IconPlus, IconSmartphone, IconWallet, IconX,
 };
-use crate::model::{generate_id, Wallet, WalletType};
+use crate::model::{generate_id, parse_input_idr, Wallet, WalletType};
 
 #[component]
 pub fn WalletModal(
@@ -16,6 +16,8 @@ pub fn WalletModal(
 
     let mut name = use_signal(String::new);
     let mut wallet_type = use_signal(|| WalletType::Bank);
+    let mut balance_val = use_signal(|| 0.0);
+    let mut balance_display = use_signal(|| "Rp 0".to_string());
     let mut error_msg = use_signal(|| None::<String>);
 
     let handle_submit = move |evt: FormEvent| {
@@ -31,11 +33,13 @@ pub fn WalletModal(
             id: generate_id(),
             name: n,
             wallet_type: *wallet_type.read(),
-            initial_balance: 0.0,
+            initial_balance: *balance_val.read(),
         };
 
         on_save.call(new_wallet);
         name.set(String::new());
+        balance_val.set(0.0);
+        balance_display.set("Rp 0".to_string());
         error_msg.set(None);
     };
 
@@ -120,6 +124,29 @@ pub fn WalletModal(
                                 IconWallet { size: "15" }
                                 span { "Lainnya" }
                             }
+                        }
+                    }
+
+                    // Saldo Awal Saat Ini
+                    div { class: "field-group",
+                        label { class: "field-label", "Saldo Awal Saat Ini" }
+                        input {
+                            r#type: "text",
+                            class: "field-input text-sm tabular-numbers",
+                            placeholder: "Rp 0",
+                            value: "{balance_display}",
+                            oninput: move |e| {
+                                let (val, formatted) = parse_input_idr(&e.value());
+                                balance_val.set(val);
+                                if val == 0.0 {
+                                    balance_display.set("Rp 0".to_string());
+                                } else {
+                                    balance_display.set(format!("Rp {}", formatted));
+                                }
+                            },
+                        }
+                        p { class: "text-[11px] text-[var(--text-muted)] mt-1.5",
+                            "Saldo nyata akun ini saat pertama kali didaftarkan. Kosongkan atau biarkan Rp 0 jika belum ada saldo."
                         }
                     }
 

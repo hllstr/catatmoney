@@ -6,8 +6,9 @@ use crate::components::icons::{
 };
 #[allow(unused_imports)]
 use crate::model::{
-    create_backup, generate_id, get_today_date, trigger_json_download, CatatMoneyBackup,
-    Transaction, TransactionType, UserCategories, UserProfile, Wallet, WalletType,
+    create_backup, format_idr, generate_id, get_today_date, parse_input_idr,
+    trigger_json_download, CatatMoneyBackup, Transaction, TransactionType, UserCategories,
+    UserProfile, Wallet, WalletType,
 };
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
@@ -38,6 +39,8 @@ pub fn ManagementView(
     let mut editing_wallet_id = use_signal(|| None::<String>);
     let mut wallet_name_input = use_signal(String::new);
     let mut wallet_type_input = use_signal(|| WalletType::Bank);
+    let mut wallet_balance_input = use_signal(|| 0.0);
+    let mut wallet_balance_display = use_signal(|| "Rp 0".to_string());
     let mut wallet_error = use_signal(|| None::<String>);
 
     // State form Kategori
@@ -138,6 +141,8 @@ pub fn ManagementView(
                                     onclick: move |_| {
                                         wallet_name_input.set(String::new());
                                         wallet_type_input.set(WalletType::Bank);
+                                        wallet_balance_input.set(0.0);
+                                        wallet_balance_display.set("Rp 0".to_string());
                                         editing_wallet_id.set(None);
                                         is_adding_wallet.set(true);
                                     },
@@ -185,13 +190,14 @@ pub fn ManagementView(
                                                 if let Some(w) = updated.iter_mut().find(|w| &w.id == edit_id) {
                                                     w.name = name;
                                                     w.wallet_type = *wallet_type_input.read();
+                                                    w.initial_balance = *wallet_balance_input.read();
                                                 }
                                             } else {
                                                 let new_w = Wallet {
                                                     id: generate_id(),
                                                     name,
                                                     wallet_type: *wallet_type_input.read(),
-                                                    initial_balance: 0.0,
+                                                    initial_balance: *wallet_balance_input.read(),
                                                 };
                                                 updated.push(new_w);
                                             }
@@ -200,6 +206,8 @@ pub fn ManagementView(
                                             is_adding_wallet.set(false);
                                             editing_wallet_id.set(None);
                                             wallet_name_input.set(String::new());
+                                            wallet_balance_input.set(0.0);
+                                            wallet_balance_display.set("Rp 0".to_string());
                                             wallet_error.set(None);
                                         }
                                     },
@@ -256,6 +264,28 @@ pub fn ManagementView(
                                         }
                                     }
 
+                                    div { class: "field-group mb-4",
+                                        label { class: "field-label", "Saldo Awal Saat Ini" }
+                                        input {
+                                            r#type: "text",
+                                            class: "field-input text-sm tabular-numbers",
+                                            placeholder: "Rp 0",
+                                            value: "{wallet_balance_display}",
+                                            oninput: move |e| {
+                                                let (val, formatted) = parse_input_idr(&e.value());
+                                                wallet_balance_input.set(val);
+                                                if val == 0.0 {
+                                                    wallet_balance_display.set("Rp 0".to_string());
+                                                } else {
+                                                    wallet_balance_display.set(format!("Rp {}", formatted));
+                                                }
+                                            },
+                                        }
+                                        p { class: "text-[11px] text-[var(--text-muted)] mt-1.5",
+                                            "Saldo nyata akun ini saat pertama kali didaftarkan. Kosongkan atau biarkan Rp 0 jika belum ada saldo."
+                                        }
+                                    }
+
                                     div { class: "flex items-center justify-end gap-2 mt-4 pt-3 border-t border-[var(--border-subtle)]",
                                         button {
                                             r#type: "button",
@@ -284,6 +314,7 @@ pub fn ManagementView(
                                     let id = w.id.clone();
                                     let name = w.name.clone();
                                     let w_type = w.wallet_type;
+                                    let w_bal = w.initial_balance;
                                     let is_editing = editing_wallet_id.read().as_ref() == Some(&id);
 
                                     rsx! {
@@ -309,6 +340,12 @@ pub fn ManagementView(
                                                     onclick: move |_| {
                                                         wallet_name_input.set(name.clone());
                                                         wallet_type_input.set(w_type);
+                                                        wallet_balance_input.set(w_bal);
+                                                        if w_bal == 0.0 {
+                                                            wallet_balance_display.set("Rp 0".to_string());
+                                                        } else {
+                                                            wallet_balance_display.set(format_idr(w_bal));
+                                                        }
                                                         editing_wallet_id.set(Some(id.clone()));
                                                         is_adding_wallet.set(false);
                                                         wallet_error.set(None);
