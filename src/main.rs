@@ -21,9 +21,9 @@ use components::savings::SavingsView;
 use components::wallet_modal::WalletModal;
 use model::{
     format_idr, get_default_categories, load_budgets, load_categories,
-    load_gemini_api_key, load_profile, load_savings_goals, load_savings_logs, load_theme,
+    load_gemini_api_key, load_gemini_model, load_profile, load_savings_goals, load_savings_logs, load_theme,
     load_transactions, load_wallets, reset_all_data, save_budgets, save_categories,
-    save_gemini_api_key, save_profile, save_savings_goals, save_savings_logs, save_theme,
+    save_gemini_api_key, save_gemini_model, save_profile, save_savings_goals, save_savings_logs, save_theme,
     save_transactions, save_wallets, CategoryBudget, SavingsGoal, SavingsLogEntry,
     ThemeMode, Transaction, TransactionType, UserCategories, UserProfile, Wallet,
 };
@@ -100,8 +100,9 @@ pub fn App() -> Element {
     let mut savings_goals = use_signal(load_savings_goals);
     let mut savings_logs = use_signal(load_savings_logs);
 
-    // State Google Gemini API Key (disinkronkan dengan LocalStorage)
+    // State Google Gemini API Key & Model (disinkronkan dengan LocalStorage)
     let mut gemini_api_key = use_signal(load_gemini_api_key);
+    let mut gemini_model = use_signal(load_gemini_model);
 
     // State navigasi tab aktif (Dashboard, Kalender, Riwayat, Kelola)
     let mut active_tab = use_signal(|| NavTab::Dashboard);
@@ -341,6 +342,7 @@ pub fn App() -> Element {
                                 AiCopilotView {
                                     user_name: profile.read().as_ref().map(|p| p.name.clone()).unwrap_or_else(|| "Pengguna".to_string()),
                                     gemini_api_key: gemini_api_key.read().clone(),
+                                    gemini_model: gemini_model.read().clone(),
                                     transactions: transactions.read().clone(),
                                     wallets: wallets.read().clone(),
                                     categories: categories.read().clone(),
@@ -350,6 +352,10 @@ pub fn App() -> Element {
                                     on_save_api_key: move |key: String| {
                                         save_gemini_api_key(Some(&key));
                                         gemini_api_key.set(Some(key));
+                                    },
+                                    on_save_model: move |model: String| {
+                                        save_gemini_model(&model);
+                                        gemini_model.set(model);
                                     },
                                     on_record_transaction: move |new_trx: Transaction| {
                                         let mut list = transactions.write();
@@ -403,6 +409,7 @@ pub fn App() -> Element {
                                     savings_goals: savings_goals.read().clone(),
                                     savings_logs: savings_logs.read().clone(),
                                     gemini_api_key: gemini_api_key.read().clone(),
+                                    gemini_model: gemini_model.read().clone(),
                                     current_theme: *theme.read(),
                                     on_change_theme: move |new_theme: ThemeMode| {
                                         theme.set(new_theme);
@@ -423,6 +430,10 @@ pub fn App() -> Element {
                                     on_delete_api_key: move |_| {
                                         save_gemini_api_key(None);
                                         gemini_api_key.set(None);
+                                    },
+                                    on_save_model: move |model: String| {
+                                        save_gemini_model(&model);
+                                        gemini_model.set(model);
                                     },
                                     on_request_delete_wallet: move |w_name: String| {
                                         pending_delete.set(Some(PendingDelete::Wallet(w_name)));

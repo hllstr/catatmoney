@@ -16,6 +16,8 @@ use crate::model::{
 pub fn AiCopilotView(
     user_name: String,
     gemini_api_key: Option<String>,
+    #[props(default = "gemini-3.8-flash".to_string())]
+    gemini_model: String,
     transactions: Vec<Transaction>,
     wallets: Vec<Wallet>,
     categories: UserCategories,
@@ -23,6 +25,7 @@ pub fn AiCopilotView(
     savings_goals: Vec<SavingsGoal>,
     savings_logs: Vec<SavingsLogEntry>,
     on_save_api_key: EventHandler<String>,
+    on_save_model: EventHandler<String>,
     on_record_transaction: EventHandler<Transaction>,
     on_update_budgets: EventHandler<Vec<CategoryBudget>>,
     on_update_goals: EventHandler<Vec<SavingsGoal>>,
@@ -44,6 +47,10 @@ pub fn AiCopilotView(
     let mut show_key_text = use_signal(|| false);
     let mut is_editing_key = use_signal(|| false);
 
+    // Model selection state
+    let mut is_editing_model = use_signal(|| false);
+    let mut custom_model_input = use_signal(|| gemini_model.clone());
+
     let has_key = gemini_api_key.as_ref().map(|k| !k.trim().is_empty()).unwrap_or(false);
 
     // Context wrapped in Rc for multi-closure usage
@@ -55,6 +62,7 @@ pub fn AiCopilotView(
     let cats_rc = Rc::new(categories);
     let user_name_rc = Rc::new(user_name);
     let api_key_rc = Rc::new(gemini_api_key);
+    let model_rc = Rc::new(gemini_model.clone());
 
 
 
@@ -76,9 +84,16 @@ pub fn AiCopilotView(
                     div {
                         div { class: "flex items-center gap-2",
                             h2 { class: "text-base font-bold text-[var(--text-primary)] tracking-tight", "Gemini AI Copilot" }
-                            span { class: "text-[10px] font-semibold px-2 py-0.5 rounded-full bg-[var(--positive-bg)] text-[var(--positive)] border border-[var(--positive-border)] flex items-center gap-1",
+                            button {
+                                r#type: "button",
+                                title: "Klik untuk ganti model AI",
+                                class: "text-[10px] font-semibold px-2 py-0.5 rounded-full bg-[var(--positive-bg)] text-[var(--positive)] border border-[var(--positive-border)] flex items-center gap-1 font-mono hover:opacity-80 transition-all",
+                                onclick: move |_| {
+                                    let nv = !*is_editing_model.read();
+                                    is_editing_model.set(nv);
+                                },
                                 span { class: "w-1.5 h-1.5 rounded-full bg-[var(--positive)] animate-pulse" }
-                                "gemini-2.0-flash"
+                                "{gemini_model}"
                             }
                         }
                         p { class: "text-xs text-[var(--text-muted)] mt-0.5",
@@ -109,6 +124,70 @@ pub fn AiCopilotView(
                             onclick: handle_clear_chat,
                             IconTrash { size: "14" }
                             span { class: "hidden sm:inline", "Bersihkan" }
+                        }
+                    }
+                }
+            }
+
+            // Quick Model Selector Panel
+            if *is_editing_model.read() {
+                div { class: "p-3 rounded-xl border border-[var(--accent)]/30 bg-[var(--bg-card)] space-y-2 text-xs",
+                    div { class: "flex items-center justify-between",
+                        div { class: "flex items-center gap-1.5 font-semibold text-[var(--text-primary)]",
+                            IconBot { size: "14" }
+                            span { "Pilih Model Google Gemini" }
+                        }
+                        button {
+                            r#type: "button",
+                            class: "text-[var(--text-muted)] hover:text-[var(--text-primary)] p-0.5",
+                            onclick: move |_| is_editing_model.set(false),
+                            IconX { size: "14" }
+                        }
+                    }
+                    div { class: "flex flex-wrap gap-1.5",
+                        for (pid, pdesc) in [
+                            ("gemini-3.8-flash", "3.8 Flash (Default)"),
+                            ("gemini-3.1-pro", "3.1 Pro (Reasoning)"),
+                            ("gemini-3.1-flash-lite", "3.1 Flash-Lite"),
+                            ("gemini-2.5-flash", "2.5 Flash"),
+                        ] {
+                            button {
+                                r#type: "button",
+                                class: if gemini_model == pid {
+                                    "px-2.5 py-1 rounded-lg border border-[var(--accent)] bg-[var(--accent-subtle)] text-[var(--accent)] font-medium text-[11px]"
+                                } else {
+                                    "px-2.5 py-1 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-surface-elevated)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] text-[11px]"
+                                },
+                                onclick: {
+                                    let p = pid.to_string();
+                                    move |_| {
+                                        custom_model_input.set(p.clone());
+                                        on_save_model.call(p.clone());
+                                        is_editing_model.set(false);
+                                    }
+                                },
+                                "{pdesc}"
+                            }
+                        }
+                    }
+                    div { class: "flex items-center gap-1.5 pt-1",
+                        input {
+                            r#type: "text",
+                            class: "field-input flex-1 text-xs font-mono py-1 px-2.5 tabular-numbers",
+                            placeholder: "Atau ketik model kustom (default: gemini-3.8-flash)...",
+                            value: "{custom_model_input}",
+                            oninput: move |e| custom_model_input.set(e.value()),
+                        }
+                        button {
+                            r#type: "button",
+                            class: "btn-primary text-xs py-1 px-3 shrink-0",
+                            onclick: move |_| {
+                                let v = custom_model_input.read().trim().to_string();
+                                let final_v = if v.is_empty() { "gemini-3.8-flash".to_string() } else { v };
+                                on_save_model.call(final_v);
+                                is_editing_model.set(false);
+                            },
+                            "Terapkan"
                         }
                     }
                 }
@@ -627,10 +706,12 @@ pub fn AiCopilotView(
                         let b = budgets_rc.clone();
                         let s = savings_rc.clone();
                         let k = api_key_rc.clone();
+                        let m = model_rc.clone();
                         move |evt: KeyboardEvent| {
                             if evt.key() == Key::Enter && !*is_loading.read() {
                                 execute_send_message(
                                     k.as_deref(),
+                                    &m,
                                     &u,
                                     &w,
                                     &t,
@@ -663,9 +744,11 @@ pub fn AiCopilotView(
                         let b = budgets_rc.clone();
                         let s = savings_rc.clone();
                         let k = api_key_rc.clone();
+                        let m = model_rc.clone();
                         move |_| {
                             execute_send_message(
                                 k.as_deref(),
+                                &m,
                                 &u,
                                 &w,
                                 &t,
@@ -809,6 +892,7 @@ fn execute_confirm_action(
 
 fn execute_send_message(
     api_key_opt: Option<&str>,
+    model: &str,
     user_name: &str,
     wallets: &[Wallet],
     trxs: &[Transaction],
@@ -869,6 +953,7 @@ fn execute_send_message(
         savings,
     );
 
+    let model_str = model.to_string();
     spawn({
         let mut messages_sig = messages;
         let mut is_loading_sig = is_loading;
@@ -880,6 +965,7 @@ fn execute_send_message(
         async move {
             let result = call_gemini_api(
                 &api_key,
+                &model_str,
                 &system_prompt,
                 &current_msgs,
                 &prompt_text,
@@ -986,16 +1072,24 @@ ATURAN PERILAKU DAN RESPON:
     )
 }
 
-/// Helper function to perform async HTTP POST to Gemini 2.0 Flash REST API
+/// Helper function to perform async HTTP POST to Gemini REST API
 async fn call_gemini_api(
     api_key: &str,
+    model: &str,
     system_prompt: &str,
     chat_history: &[AiChatMessage],
     user_prompt: &str,
     image_base64: Option<&str>,
 ) -> Result<(String, Option<AiProposedAction>), String> {
+    let clean_model = model.trim().trim_start_matches("models/");
+    let effective_model = if clean_model.is_empty() {
+        "gemini-3.8-flash"
+    } else {
+        clean_model
+    };
     let url = format!(
-        "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={}",
+        "https://generativelanguage.googleapis.com/v1beta/models/{}:generateContent?key={}",
+        effective_model,
         api_key
     );
 
@@ -1191,6 +1285,8 @@ async fn call_gemini_api(
         let err_text = response.text().await.unwrap_or_default();
         if status == 400 || status == 403 {
             return Err("API Key Gemini tidak valid atau kuota habis. Silakan periksa kembali API Key Anda.".to_string());
+        } else if status == 404 {
+            return Err(format!("Model '{}' tidak ditemukan (404). Silakan periksa atau ubah model di Menu Kelola > Integrasi Gemini AI (misal: gemini-3.8-flash).", effective_model));
         } else {
             return Err(format!("Gemini API Error ({}): {}", status, err_text));
         }

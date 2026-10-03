@@ -121,6 +121,9 @@ pub const STORAGE_KEY_SAVINGS_LOGS: &str = "catatmoney_savings_logs_v1";
 #[allow(dead_code)]
 pub const STORAGE_KEY_GEMINI_API_KEY: &str = "catatmoney_gemini_api_key_v1";
 #[allow(dead_code)]
+pub const STORAGE_KEY_GEMINI_MODEL: &str = "catatmoney_gemini_model_v1";
+pub const DEFAULT_GEMINI_MODEL: &str = "gemini-3.8-flash";
+#[allow(dead_code)]
 pub const STORAGE_KEY_AI_CHAT_HISTORY: &str = "catatmoney_ai_chat_v1";
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -472,6 +475,7 @@ pub fn reset_all_data() {
                 let _ = storage.remove_item(STORAGE_KEY_SAVINGS_GOALS);
                 let _ = storage.remove_item(STORAGE_KEY_SAVINGS_LOGS);
                 let _ = storage.remove_item(STORAGE_KEY_AI_CHAT_HISTORY);
+                let _ = storage.remove_item(STORAGE_KEY_GEMINI_MODEL);
             }
         }
     }
@@ -837,6 +841,37 @@ pub fn save_ai_chat_history(_msgs: &[AiChatMessage]) {
                 if let Ok(raw_json) = serde_json::to_string(slice) {
                     let _ = storage.set_item(STORAGE_KEY_AI_CHAT_HISTORY, &raw_json);
                 }
+            }
+        }
+    }
+}
+
+pub fn load_gemini_model() -> String {
+    #[cfg(target_arch = "wasm32")]
+    {
+        if let Some(window) = web_sys::window() {
+            if let Ok(Some(storage)) = window.local_storage() {
+                if let Ok(Some(val)) = storage.get_item(STORAGE_KEY_GEMINI_MODEL) {
+                    let trimmed = val.trim();
+                    if !trimmed.is_empty() {
+                        return trimmed.to_string();
+                    }
+                }
+            }
+        }
+    }
+    DEFAULT_GEMINI_MODEL.to_string()
+}
+
+pub fn save_gemini_model(model: &str) {
+    let _ = model;
+    #[cfg(target_arch = "wasm32")]
+    {
+        if let Some(window) = web_sys::window() {
+            if let Ok(Some(storage)) = window.local_storage() {
+                let trimmed = model.trim();
+                let to_save = if trimmed.is_empty() { DEFAULT_GEMINI_MODEL } else { trimmed };
+                let _ = storage.set_item(STORAGE_KEY_GEMINI_MODEL, to_save);
             }
         }
     }
