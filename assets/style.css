@@ -2215,28 +2215,39 @@ input[type="time"]::-webkit-calendar-picker-indicator:hover {
 
   /* 5. Kelola (Pusat Manajemen Data) on Mobile */
   .manage-subtabs-bar {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
+    display: flex;
+    flex-wrap: nowrap;
+    overflow-x: auto;
     gap: 0.35rem;
     padding: 0.35rem;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-x;
+  }
+
+  .manage-subtabs-bar::-webkit-scrollbar {
+    display: none;
   }
 
   .manage-subtabs-bar > button:last-child {
-    grid-column: span 2;
+    grid-column: auto;
   }
 
   .manage-tab-btn {
-    padding: 0.55rem 0.5rem;
-    font-size: 0.725rem;
+    flex: 0 0 auto;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.75rem;
     justify-content: center;
     text-align: center;
-    width: 100%;
+    width: auto;
+    border-radius: 8px;
   }
 
   .manage-tab-btn span {
     white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    overflow: visible;
+    text-overflow: clip;
   }
 
   .tab-label-full {

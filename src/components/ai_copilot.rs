@@ -76,33 +76,33 @@ pub fn AiCopilotView(
     rsx! {
         div { class: "ai-copilot-container max-w-4xl mx-auto space-y-4 pb-28",
             // Header Top Bar
-            div { class: "p-4 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-card)] flex items-center justify-between gap-3 shadow-sm",
-                div { class: "flex items-center gap-3",
-                    div { class: "w-9 h-9 rounded-lg bg-[var(--bg-surface-elevated)] border border-[var(--border-subtle)] flex items-center justify-center text-[var(--accent)] shrink-0",
+            div { class: "p-3 sm:p-4 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-card)] flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-sm",
+                div { class: "flex items-start sm:items-center gap-2.5 sm:gap-3 min-w-0",
+                    div { class: "w-8 h-8 sm:w-9 sm:h-9 rounded-lg bg-[var(--bg-surface-elevated)] border border-[var(--border-subtle)] flex items-center justify-center text-[var(--accent)] shrink-0 mt-0.5 sm:mt-0",
                         IconSparkles { size: "18" }
                     }
-                    div {
-                        div { class: "flex items-center gap-2",
-                            h2 { class: "text-base font-bold text-[var(--text-primary)] tracking-tight", "Gemini AI Copilot" }
+                    div { class: "min-w-0 flex-1",
+                        div { class: "flex items-center gap-2 flex-wrap",
+                            h2 { class: "text-sm sm:text-base font-bold text-[var(--text-primary)] tracking-tight", "Gemini AI Copilot" }
                             button {
                                 r#type: "button",
                                 title: "Klik untuk ganti model AI",
-                                class: "text-[10px] font-semibold px-2 py-0.5 rounded-full bg-[var(--positive-bg)] text-[var(--positive)] border border-[var(--positive-border)] flex items-center gap-1 font-mono hover:opacity-80 transition-all",
+                                class: "text-[10px] font-semibold px-2 py-0.5 rounded-full bg-[var(--positive-bg)] text-[var(--positive)] border border-[var(--positive-border)] flex items-center gap-1 font-mono hover:opacity-80 transition-all max-w-[140px] sm:max-w-none truncate",
                                 onclick: move |_| {
                                     let nv = !*is_editing_model.read();
                                     is_editing_model.set(nv);
                                 },
-                                span { class: "w-1.5 h-1.5 rounded-full bg-[var(--positive)] animate-pulse" }
-                                "{gemini_model}"
+                                span { class: "w-1.5 h-1.5 rounded-full bg-[var(--positive)] animate-pulse shrink-0" }
+                                span { class: "truncate", "{gemini_model}" }
                             }
                         }
-                        p { class: "text-xs text-[var(--text-muted)] mt-0.5",
+                        p { class: "text-[11px] sm:text-xs text-[var(--text-muted)] mt-0.5 hidden xs:block sm:block truncate",
                             "Asisten otonom untuk mencatat transaksi, scan struk, dan mengelola target tabungan."
                         }
                     }
                 }
 
-                div { class: "flex items-center gap-2",
+                div { class: "flex items-center justify-end gap-1.5 sm:gap-2 shrink-0 border-t sm:border-t-0 pt-2 sm:pt-0 border-[var(--border-subtle)]",
                     if has_key {
                         button {
                             r#type: "button",
@@ -112,8 +112,8 @@ pub fn AiCopilotView(
                                 let next_v = !*is_editing_key.read();
                                 is_editing_key.set(next_v);
                             },
-                            IconKey { size: "14" }
-                            span { class: "hidden sm:inline", "API Key" }
+                            IconKey { size: "13" }
+                            span { "API Key" }
                         }
                     }
                     if !messages.read().is_empty() {
@@ -122,8 +122,8 @@ pub fn AiCopilotView(
                             title: "Bersihkan Percakapan",
                             class: "btn-secondary text-xs px-2.5 py-1.5 text-[var(--negative)] hover:bg-[var(--negative-bg)] flex items-center gap-1.5",
                             onclick: handle_clear_chat,
-                            IconTrash { size: "14" }
-                            span { class: "hidden sm:inline", "Bersihkan" }
+                            IconTrash { size: "13" }
+                            span { "Bersihkan" }
                         }
                     }
                 }
@@ -131,7 +131,7 @@ pub fn AiCopilotView(
 
             // Quick Model Selector Panel
             if *is_editing_model.read() {
-                div { class: "p-3 rounded-xl border border-[var(--accent)]/30 bg-[var(--bg-card)] space-y-2 text-xs",
+                div { class: "p-3 rounded-xl border border-[var(--accent)]/30 bg-[var(--bg-card)] space-y-2.5 text-xs",
                     div { class: "flex items-center justify-between",
                         div { class: "flex items-center gap-1.5 font-semibold text-[var(--text-primary)]",
                             IconBot { size: "14" }
@@ -144,7 +144,7 @@ pub fn AiCopilotView(
                             IconX { size: "14" }
                         }
                     }
-                    div { class: "flex flex-wrap gap-1.5",
+                    div { class: "grid grid-cols-2 sm:flex sm:flex-wrap gap-1.5",
                         for (pid, pdesc) in [
                             ("gemini-3.8-flash", "3.8 Flash (Default)"),
                             ("gemini-3.1-pro", "3.1 Pro (Reasoning)"),
@@ -154,9 +154,9 @@ pub fn AiCopilotView(
                             button {
                                 r#type: "button",
                                 class: if gemini_model == pid {
-                                    "px-2.5 py-1 rounded-lg border border-[var(--accent)] bg-[var(--accent-subtle)] text-[var(--accent)] font-medium text-[11px]"
+                                    "px-2.5 py-1.5 sm:py-1 rounded-lg border border-[var(--accent)] bg-[var(--accent-subtle)] text-[var(--accent)] font-medium text-[11px] text-center"
                                 } else {
-                                    "px-2.5 py-1 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-surface-elevated)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] text-[11px]"
+                                    "px-2.5 py-1.5 sm:py-1 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-surface-elevated)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] text-[11px] text-center"
                                 },
                                 onclick: {
                                     let p = pid.to_string();
@@ -170,17 +170,17 @@ pub fn AiCopilotView(
                             }
                         }
                     }
-                    div { class: "flex items-center gap-1.5 pt-1",
+                    div { class: "flex flex-col sm:flex-row items-stretch sm:items-center gap-1.5 pt-1",
                         input {
                             r#type: "text",
-                            class: "field-input flex-1 text-xs font-mono py-1 px-2.5 tabular-numbers",
+                            class: "field-input flex-1 text-xs font-mono py-1.5 px-2.5 tabular-numbers",
                             placeholder: "Atau ketik model kustom (default: gemini-3.8-flash)...",
                             value: "{custom_model_input}",
                             oninput: move |e| custom_model_input.set(e.value()),
                         }
                         button {
                             r#type: "button",
-                            class: "btn-primary text-xs py-1 px-3 shrink-0",
+                            class: "btn-primary text-xs py-1.5 px-3 shrink-0 flex items-center justify-center gap-1",
                             onclick: move |_| {
                                 let v = custom_model_input.read().trim().to_string();
                                 let final_v = if v.is_empty() { "gemini-3.8-flash".to_string() } else { v };
@@ -195,13 +195,13 @@ pub fn AiCopilotView(
 
             // Onboarding / Quick Edit API Key Card
             if !has_key || *is_editing_key.read() {
-                div { class: "p-4 rounded-xl border border-[var(--accent)]/30 bg-[var(--bg-card)] space-y-3",
+                div { class: "p-3.5 sm:p-4 rounded-xl border border-[var(--accent)]/30 bg-[var(--bg-card)] space-y-3",
                     div { class: "flex items-start justify-between gap-3",
-                        div { class: "flex items-center gap-2.5",
+                        div { class: "flex items-center gap-2.5 min-w-0",
                             span { class: "w-8 h-8 rounded-lg bg-[var(--bg-surface-elevated)] border border-[var(--border-subtle)] flex items-center justify-center text-[var(--accent)] shrink-0",
                                 IconKey { size: "16" }
                             }
-                            div {
+                            div { class: "min-w-0",
                                 h3 { class: "text-sm font-bold text-[var(--text-primary)]",
                                     if has_key { "Perbarui Google Gemini API Key" } else { "Aktivasi Gemini AI Copilot" }
                                 }
@@ -213,7 +213,7 @@ pub fn AiCopilotView(
                         if has_key {
                             button {
                                 r#type: "button",
-                                class: "text-[var(--text-muted)] hover:text-[var(--text-primary)] p-1",
+                                class: "text-[var(--text-muted)] hover:text-[var(--text-primary)] p-1 shrink-0",
                                 onclick: move |_| is_editing_key.set(false),
                                 IconX { size: "16" }
                             }
@@ -244,10 +244,10 @@ pub fn AiCopilotView(
                             }
                         }
 
-                        div { class: "flex items-center gap-2 shrink-0",
+                        div { class: "flex flex-wrap sm:flex-nowrap items-center gap-2 shrink-0",
                             button {
                                 r#type: "button",
-                                class: "btn-primary text-xs px-4 py-2 font-semibold flex items-center gap-1.5",
+                                class: "btn-primary text-xs px-4 py-2 font-semibold flex items-center justify-center gap-1.5 flex-1 sm:flex-initial",
                                 onclick: move |_| {
                                     let val = temp_key_input.read().trim().to_string();
                                     if !val.is_empty() {
@@ -264,7 +264,7 @@ pub fn AiCopilotView(
                                 href: "https://aistudio.google.com/app/apikey",
                                 target: "_blank",
                                 rel: "noopener noreferrer",
-                                class: "btn-secondary text-xs px-3 py-2 flex items-center gap-1 text-[var(--text-secondary)]",
+                                class: "btn-secondary text-xs px-3 py-2 flex items-center justify-center gap-1 text-[var(--text-secondary)] flex-1 sm:flex-initial",
                                 "Dapatkan Key Gratis"
                                 IconArrowRight { size: "12" }
                             }
@@ -425,9 +425,9 @@ pub fn AiCopilotView(
                                                         match action {
                                                             AiProposedAction::RecordTransaction { title, amount, transaction_type, category, wallet, date, time, notes, attachment } => rsx! {
                                                                 div { class: "grid grid-cols-2 gap-2 text-[11px]",
-                                                                    div {
+                                                                    div { class: "col-span-2",
                                                                         span { class: "text-[10px] text-[var(--text-muted)] block", "Judul Transaksi" }
-                                                                        span { class: "font-semibold text-[var(--text-primary)] truncate block", "{title}" }
+                                                                        span { class: "font-semibold text-[var(--text-primary)] break-words block", "{title}" }
                                                                     }
                                                                     div {
                                                                         span { class: "text-[10px] text-[var(--text-muted)] block", "Nominal" }
@@ -441,17 +441,17 @@ pub fn AiCopilotView(
                                                                         }
                                                                     }
                                                                     div {
-                                                                        span { class: "text-[10px] text-[var(--text-muted)] block", "Kategori" }
-                                                                        div { class: "flex items-center gap-1.5 text-[var(--text-primary)] mt-0.5 font-medium",
-                                                                            CategoryIcon { category: category.clone() }
-                                                                            span { "{category}" }
+                                                                        span { class: "text-[10px] text-[var(--text-muted)] block", "Sumber Dana" }
+                                                                        div { class: "flex items-center gap-1 text-[var(--text-primary)] mt-0.5 font-medium truncate",
+                                                                            IconWallet { size: "13" }
+                                                                            span { class: "truncate", "{wallet}" }
                                                                         }
                                                                     }
-                                                                    div {
-                                                                        span { class: "text-[10px] text-[var(--text-muted)] block", "Sumber Dana" }
-                                                                        div { class: "flex items-center gap-1 text-[var(--text-primary)] mt-0.5 font-medium",
-                                                                            IconWallet { size: "13" }
-                                                                            span { "{wallet}" }
+                                                                    div { class: "col-span-2 sm:col-span-1",
+                                                                        span { class: "text-[10px] text-[var(--text-muted)] block", "Kategori" }
+                                                                        div { class: "flex items-center gap-1.5 text-[var(--text-primary)] mt-0.5 font-medium truncate",
+                                                                            CategoryIcon { category: category.clone() }
+                                                                            span { class: "truncate", "{category}" }
                                                                         }
                                                                     }
                                                                 }
@@ -459,56 +459,56 @@ pub fn AiCopilotView(
                                                                 div { class: "text-[10px] text-[var(--text-muted)] pt-1 flex items-center justify-between border-t border-[var(--border-subtle)]",
                                                                     span { class: "tabular-numbers", "{date} • {time} WIB" }
                                                                     if attachment.is_some() {
-                                                                        span { class: "text-[var(--accent)] flex items-center gap-1",
+                                                                        span { class: "text-[var(--accent)] flex items-center gap-1 shrink-0",
                                                                             IconPaperclip { size: "11" }
-                                                                            "Ada Foto Struk"
+                                                                            "Ada Struk"
                                                                         }
                                                                     }
                                                                 }
 
                                                                 if !notes.is_empty() {
-                                                                    p { class: "text-[10px] text-[var(--text-muted)] italic", "\"{notes}\"" }
+                                                                    p { class: "text-[10px] text-[var(--text-muted)] italic break-words", "\"{notes}\"" }
                                                                 }
                                                             },
                                                             AiProposedAction::DepositSavings { goal_name, amount, notes } => rsx! {
                                                                 div { class: "space-y-1.5 text-[11px]",
-                                                                    div { class: "flex justify-between items-center",
-                                                                        span { class: "text-[var(--text-muted)]", "Target Tabungan:" }
-                                                                        strong { class: "text-[var(--text-primary)] font-semibold", "{goal_name}" }
+                                                                    div { class: "flex justify-between items-center gap-2",
+                                                                        span { class: "text-[var(--text-muted)] shrink-0", "Target Tabungan:" }
+                                                                        strong { class: "text-[var(--text-primary)] font-semibold truncate text-right", "{goal_name}" }
                                                                     }
-                                                                    div { class: "flex justify-between items-center",
-                                                                        span { class: "text-[var(--text-muted)]", "Nominal Setoran:" }
-                                                                        strong { class: "tabular-numbers font-bold text-[var(--positive)]", "+{format_idr(*amount)}" }
+                                                                    div { class: "flex justify-between items-center gap-2",
+                                                                        span { class: "text-[var(--text-muted)] shrink-0", "Nominal Setoran:" }
+                                                                        strong { class: "tabular-numbers font-bold text-[var(--positive)] shrink-0", "+{format_idr(*amount)}" }
                                                                     }
                                                                     if !notes.is_empty() {
-                                                                        p { class: "text-[10px] text-[var(--text-muted)] italic", "\"{notes}\"" }
+                                                                        p { class: "text-[10px] text-[var(--text-muted)] italic break-words", "\"{notes}\"" }
                                                                     }
                                                                 }
                                                             },
                                                             AiProposedAction::WithdrawSavings { goal_name, amount, notes } => rsx! {
                                                                 div { class: "space-y-1.5 text-[11px]",
-                                                                    div { class: "flex justify-between items-center",
-                                                                        span { class: "text-[var(--text-muted)]", "Target Tabungan:" }
-                                                                        strong { class: "text-[var(--text-primary)] font-semibold", "{goal_name}" }
+                                                                    div { class: "flex justify-between items-center gap-2",
+                                                                        span { class: "text-[var(--text-muted)] shrink-0", "Target Tabungan:" }
+                                                                        strong { class: "text-[var(--text-primary)] font-semibold truncate text-right", "{goal_name}" }
                                                                     }
-                                                                    div { class: "flex justify-between items-center",
-                                                                        span { class: "text-[var(--text-muted)]", "Nominal Penarikan:" }
-                                                                        strong { class: "tabular-numbers font-bold text-[var(--negative)]", "-{format_idr(*amount)}" }
+                                                                    div { class: "flex justify-between items-center gap-2",
+                                                                        span { class: "text-[var(--text-muted)] shrink-0", "Nominal Penarikan:" }
+                                                                        strong { class: "tabular-numbers font-bold text-[var(--negative)] shrink-0", "-{format_idr(*amount)}" }
                                                                     }
                                                                     if !notes.is_empty() {
-                                                                        p { class: "text-[10px] text-[var(--text-muted)] italic", "\"{notes}\"" }
+                                                                        p { class: "text-[10px] text-[var(--text-muted)] italic break-words", "\"{notes}\"" }
                                                                     }
                                                                 }
                                                             },
                                                             AiProposedAction::SetBudget { category, monthly_limit } => rsx! {
                                                                 div { class: "space-y-1.5 text-[11px]",
-                                                                    div { class: "flex justify-between items-center",
-                                                                        span { class: "text-[var(--text-muted)]", "Kategori Pengeluaran:" }
-                                                                        strong { class: "text-[var(--text-primary)] font-semibold", "{category}" }
+                                                                    div { class: "flex justify-between items-center gap-2",
+                                                                        span { class: "text-[var(--text-muted)] shrink-0", "Kategori Pengeluaran:" }
+                                                                        strong { class: "text-[var(--text-primary)] font-semibold truncate text-right", "{category}" }
                                                                     }
-                                                                    div { class: "flex justify-between items-center",
-                                                                        span { class: "text-[var(--text-muted)]", "Pagu Anggaran Bulanan:" }
-                                                                        strong { class: "tabular-numbers font-bold text-[var(--accent)]", "{format_idr(*monthly_limit)}" }
+                                                                    div { class: "flex justify-between items-center gap-2",
+                                                                        span { class: "text-[var(--text-muted)] shrink-0", "Pagu Anggaran Bulanan:" }
+                                                                        strong { class: "tabular-numbers font-bold text-[var(--accent)] shrink-0", "{format_idr(*monthly_limit)}" }
                                                                     }
                                                                 }
                                                             },
@@ -516,10 +516,10 @@ pub fn AiCopilotView(
 
                                                         // Interactive Buttons for Pending Status
                                                         if status == AiActionStatus::Pending {
-                                                            div { class: "flex items-center gap-2 pt-2 border-t border-[var(--border-subtle)]",
+                                                            div { class: "flex flex-col sm:flex-row items-stretch sm:items-center gap-2 pt-2 border-t border-[var(--border-subtle)]",
                                                                 button {
                                                                     r#type: "button",
-                                                                    class: "btn-primary text-xs px-3 py-1.5 font-semibold flex-1 flex items-center justify-center gap-1.5 bg-[var(--positive)] hover:opacity-90 text-white",
+                                                                    class: "btn-primary text-xs px-3 py-2 font-semibold flex-1 flex items-center justify-center gap-1.5 bg-[var(--positive)] hover:opacity-90 text-white",
                                                                     onclick: {
                                                                         let id = msg_id.clone();
                                                                         let s_goals = savings_rc.clone();
@@ -544,7 +544,7 @@ pub fn AiCopilotView(
                                                                 }
                                                                 button {
                                                                     r#type: "button",
-                                                                    class: "btn-secondary text-xs px-3 py-1.5 flex items-center justify-center gap-1",
+                                                                    class: "btn-secondary text-xs px-3 py-2 flex items-center justify-center gap-1 text-[var(--text-muted)] hover:text-[var(--text-primary)]",
                                                                     onclick: {
                                                                         let id = msg_id.clone();
                                                                         move |_| {
@@ -577,16 +577,13 @@ pub fn AiCopilotView(
                     }
                 }
 
-                // Loading Indicator
+                // Loading Indicator (Minimal 3 Animated Dots)
                 if *is_loading.read() {
                     div { class: "flex justify-start",
-                        div { class: "rounded-2xl rounded-tl-sm bg-[var(--bg-app)] border border-[var(--border-subtle)] p-3 text-xs text-[var(--text-muted)] flex items-center gap-2.5",
-                            span { class: "flex gap-1",
-                                span { class: "w-1.5 h-1.5 rounded-full bg-[var(--accent)] animate-bounce" }
-                                span { class: "w-1.5 h-1.5 rounded-full bg-[var(--accent)] animate-bounce [animation-delay:0.15s]" }
-                                span { class: "w-1.5 h-1.5 rounded-full bg-[var(--accent)] animate-bounce [animation-delay:0.3s]" }
-                            }
-                            span { "Gemini 2.0 Flash sedang menganalisis..." }
+                        div { class: "rounded-2xl rounded-tl-sm bg-[var(--bg-app)] border border-[var(--border-subtle)] px-4 py-2.5 flex items-center gap-1.5 shadow-sm",
+                            span { class: "w-1.5 h-1.5 rounded-full bg-[var(--accent)] animate-bounce" }
+                            span { class: "w-1.5 h-1.5 rounded-full bg-[var(--accent)] animate-bounce [animation-delay:0.15s]" }
+                            span { class: "w-1.5 h-1.5 rounded-full bg-[var(--accent)] animate-bounce [animation-delay:0.3s]" }
                         }
                     }
                 }
@@ -624,7 +621,7 @@ pub fn AiCopilotView(
             }
 
             // Chat Input Bar Container
-            div { class: "p-2 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-card)] shadow-lg flex items-center gap-2",
+            div { class: "p-1.5 sm:p-2 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-card)] shadow-lg flex items-center gap-1.5 sm:gap-2",
                 // Hidden file input for receipts
                 input {
                     r#type: "file",

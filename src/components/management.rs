@@ -704,17 +704,17 @@ pub fn ManagementView(
 
                         div { class: "p-4 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface-subtle)] space-y-4",
                             // Status Key
-                            div { class: "flex items-center justify-between",
-                                div { class: "flex items-center gap-2.5",
+                            div { class: "flex flex-col sm:flex-row sm:items-center justify-between gap-3",
+                                div { class: "flex items-center gap-2.5 min-w-0",
                                     span { class: "w-8 h-8 rounded-lg bg-[var(--bg-surface-elevated)] border border-[var(--border-subtle)] flex items-center justify-center text-[var(--accent)] shrink-0",
                                         IconKey { size: "15" }
                                     }
-                                    div {
+                                    div { class: "min-w-0",
                                         span { class: "text-xs font-semibold text-[var(--text-primary)] block", "Status API Key" }
                                         if gemini_api_key.as_ref().map(|k| !k.trim().is_empty()).unwrap_or(false) {
-                                            span { class: "text-[11px] text-[var(--positive)] font-medium flex items-center gap-1",
+                                            span { class: "text-[11px] text-[var(--positive)] font-medium flex items-center gap-1 truncate",
                                                 IconCheck { size: "12" }
-                                                "Terhubung & Aktif ({gemini_model})"
+                                                "Terhubung ({gemini_model})"
                                             }
                                         } else {
                                             span { class: "text-[11px] text-[var(--amber-500)] font-medium",
@@ -728,7 +728,7 @@ pub fn ManagementView(
                                     href: "https://aistudio.google.com/app/apikey",
                                     target: "_blank",
                                     rel: "noopener noreferrer",
-                                    class: "btn-secondary text-xs px-2.5 py-1.5 flex items-center gap-1 text-[var(--text-secondary)]",
+                                    class: "btn-secondary text-xs px-2.5 py-1.5 flex items-center justify-center gap-1 text-[var(--text-secondary)] shrink-0",
                                     "Dapatkan Key Gratis"
                                     IconArrowRight { size: "12" }
                                 }
@@ -774,7 +774,7 @@ pub fn ManagementView(
                                 }
 
                                 // Preset Pills
-                                div { class: "flex flex-wrap gap-1.5",
+                                div { class: "grid grid-cols-2 sm:flex sm:flex-wrap gap-1.5",
                                     for (preset_id, preset_desc) in [
                                         ("gemini-3.8-flash", "3.8 Flash (Default)"),
                                         ("gemini-3.1-pro", "3.1 Pro (Reasoning)"),
@@ -784,9 +784,9 @@ pub fn ManagementView(
                                         button {
                                             r#type: "button",
                                             class: if gemini_model == preset_id {
-                                                "px-2.5 py-1 text-[11px] rounded-lg border border-[var(--accent)] bg-[var(--accent-subtle)] text-[var(--accent)] font-medium transition-all"
+                                                "px-2.5 py-1.5 sm:py-1 text-[11px] rounded-lg border border-[var(--accent)] bg-[var(--accent-subtle)] text-[var(--accent)] font-medium transition-all text-center"
                                             } else {
-                                                "px-2.5 py-1 text-[11px] rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-surface-elevated)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-all"
+                                                "px-2.5 py-1.5 sm:py-1 text-[11px] rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-surface-elevated)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-all text-center"
                                             },
                                             onclick: {
                                                 let pid = preset_id.to_string();
@@ -801,7 +801,7 @@ pub fn ManagementView(
                                 }
 
                                 // Input Kustom
-                                div { class: "flex items-center gap-2 pt-1",
+                                div { class: "flex flex-col sm:flex-row items-stretch sm:items-center gap-2 pt-1",
                                     input {
                                         r#type: "text",
                                         class: "field-input flex-1 text-xs font-mono tabular-numbers",
@@ -811,7 +811,7 @@ pub fn ManagementView(
                                     }
                                     button {
                                         r#type: "button",
-                                        class: "btn-secondary text-xs px-3 py-1.5 shrink-0 flex items-center gap-1",
+                                        class: "btn-secondary text-xs px-3 py-2 sm:py-1.5 shrink-0 flex items-center justify-center gap-1",
                                         onclick: move |_| {
                                             let val = custom_model_input.read().trim().to_string();
                                             let final_val = if val.is_empty() { "gemini-3.8-flash".to_string() } else { val };
@@ -827,11 +827,11 @@ pub fn ManagementView(
                             }
 
                             // Aksi Simpan / Hapus
-                            div { class: "flex items-center justify-end gap-2 pt-2",
+                            div { class: "flex flex-col sm:flex-row items-stretch sm:items-center justify-end gap-2 pt-3 border-t border-[var(--border-subtle)]",
                                 if gemini_api_key.as_ref().map(|k| !k.trim().is_empty()).unwrap_or(false) {
                                     button {
                                         r#type: "button",
-                                        class: "btn-secondary text-xs px-3 py-1.5 text-[var(--negative)] hover:bg-[var(--negative-bg)] flex items-center gap-1",
+                                        class: "btn-secondary text-xs px-3 py-2 sm:py-1.5 text-[var(--negative)] hover:bg-[var(--negative-bg)] flex items-center justify-center gap-1",
                                         onclick: move |_| {
                                             gemini_key_input.set(String::new());
                                             on_delete_api_key.call(());
@@ -842,7 +842,7 @@ pub fn ManagementView(
                                 }
                                 button {
                                     r#type: "button",
-                                    class: "btn-primary text-xs px-4 py-1.5 flex items-center gap-1.5",
+                                    class: "btn-primary text-xs px-4 py-2 sm:py-1.5 flex items-center justify-center gap-1.5",
                                     onclick: move |_| {
                                         let val = gemini_key_input.read().trim().to_string();
                                         if !val.is_empty() {
