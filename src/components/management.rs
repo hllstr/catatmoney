@@ -296,7 +296,7 @@ pub fn ManagementView(
                                                 }
                                                 div {
                                                     div { class: "manage-item-name", "{w.name}" }
-                                                    span { class: "wallet-type-badge mt-1 inline-block",
+                                                    span { class: "wallet-type-text mt-0.5 inline-block",
                                                         "{w.wallet_type.as_str()}"
                                                     }
                                                 }

@@ -86,7 +86,7 @@ pub fn MainDashboard(
                                         div { class: "wallet-icon-box",
                                             WalletIcon { wallet_type: w.wallet_type, size: "15" }
                                         }
-                                        span { class: "wallet-type-badge", "{w.wallet_type.as_str()}" }
+                                        span { class: "wallet-type-text", "{w.wallet_type.as_str()}" }
                                     }
                                     div { class: "wallet-name", "{w.name}" }
                                     div { class: "{bal_class}", "{format_idr(current_bal)}" }

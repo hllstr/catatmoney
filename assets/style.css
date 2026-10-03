@@ -1510,16 +1510,14 @@ body {
   color: var(--text-primary);
 }
 
-.wallet-type-badge {
-  font-size: 0.65rem;
-  font-weight: 700;
+.wallet-type-badge,
+.wallet-type-text {
+  font-size: 0.68rem;
+  font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
-  padding: 0.2rem 0.5rem;
-  border-radius: 9999px;
-  background: var(--bg-input);
+  letter-spacing: 0.04em;
   color: var(--text-muted);
-  border: 1px solid var(--border-subtle);
+  line-height: 1;
 }
 
 .wallet-name {
