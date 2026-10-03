@@ -16,3 +16,4 @@ pub mod profile_modal;
 pub mod analytics;
 pub mod budget;
 pub mod savings;
+pub mod ai_copilot;

@@ -1,7 +1,7 @@
 use dioxus::prelude::*;
 use crate::components::icons::{
     IconCalendar, IconLayoutDashboard, IconList, IconPieChart, IconPiggyBank, IconPlus, IconSliders,
-    IconTarget,
+    IconSparkles, IconTarget,
 };
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
@@ -10,6 +10,7 @@ pub enum NavTab {
     Analytics,
     Budget,
     Savings,
+    AiCopilot,
     Calendar,
     History,
     Management,
@@ -78,6 +79,17 @@ pub fn BottomNavBar(
                         onclick: move |_| on_open_modal.call(()),
                         IconPlus { size: "22" }
                     }
+                }
+
+                // Tab Asisten AI Copilot
+                button {
+                    r#type: "button",
+                    title: "Gemini AI Copilot",
+                    aria_label: "Gemini AI Copilot",
+                    class: if active_tab == NavTab::AiCopilot { "dock-item active" } else { "dock-item" },
+                    onclick: move |_| on_select_tab.call(NavTab::AiCopilot),
+                    IconSparkles { size: "18" }
+                    span { class: "dock-label", "AI Copilot" }
                 }
 
                 // Tab Kalender Keuangan

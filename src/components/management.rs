@@ -1,8 +1,9 @@
 use dioxus::prelude::*;
 use crate::components::icons::{
-    CategoryIcon, IconAlertTriangle, IconArrowDownRight, IconArrowUpRight, IconBanknote, IconCheck,
-    IconCreditCard, IconDownload, IconEdit, IconLandmark, IconMoon, IconPlus, IconSliders,
-    IconSmartphone, IconSparkles, IconSun, IconTrash, IconUpload, IconWallet, IconX, WalletIcon,
+    CategoryIcon, IconAlertTriangle, IconArrowDownRight, IconArrowRight, IconArrowUpRight, IconBanknote,
+    IconCheck, IconCreditCard, IconDownload, IconEdit, IconEye, IconEyeOff, IconKey, IconLandmark,
+    IconMoon, IconPlus, IconSliders, IconSmartphone, IconSparkles, IconSun, IconTrash, IconUpload,
+    IconWallet, IconX, WalletIcon,
 };
 #[allow(unused_imports)]
 use crate::model::{
@@ -17,6 +18,7 @@ pub enum ManageTab {
     ExpenseCategories,
     IncomeCategories,
     Theme,
+    GeminiAi,
     BackupRestore,
 }
 
@@ -29,16 +31,23 @@ pub fn ManagementView(
     budgets: Vec<CategoryBudget>,
     savings_goals: Vec<SavingsGoal>,
     savings_logs: Vec<SavingsLogEntry>,
+    gemini_api_key: Option<String>,
     current_theme: ThemeMode,
     on_change_theme: EventHandler<ThemeMode>,
     on_update_wallets: EventHandler<Vec<Wallet>>,
     on_update_categories: EventHandler<UserCategories>,
+    on_save_api_key: EventHandler<String>,
+    on_delete_api_key: EventHandler<()>,
     on_request_delete_wallet: EventHandler<String>,
     on_request_delete_category: EventHandler<(TransactionType, String)>,
     on_restore_data: EventHandler<(Option<UserProfile>, Vec<Transaction>, Vec<Wallet>, UserCategories, Vec<CategoryBudget>, Vec<SavingsGoal>, Vec<SavingsLogEntry>)>,
     on_request_reset_all_data: EventHandler<()>,
 ) -> Element {
     let mut active_subtab = use_signal(|| ManageTab::Wallets);
+
+    // State form Gemini API Key
+    let mut gemini_key_input = use_signal(String::new);
+    let mut show_gemini_key = use_signal(|| false);
 
     // State form Sumber Dana
     let mut is_adding_wallet = use_signal(|| false);
@@ -130,6 +139,19 @@ pub fn ManagementView(
                     }
                     span { class: "tab-label-full", "Tema & Tampilan" }
                     span { class: "tab-label-short", "Tema" }
+                }
+                button {
+                    r#type: "button",
+                    class: if *active_subtab.read() == ManageTab::GeminiAi { "manage-tab-btn active" } else { "manage-tab-btn" },
+                    onclick: move |_| {
+                        active_subtab.set(ManageTab::GeminiAi);
+                        is_adding_wallet.set(false);
+                        editing_wallet_id.set(None);
+                        is_adding_cat.set(false);
+                    },
+                    IconSparkles { size: "15" }
+                    span { class: "tab-label-full", "Integrasi Gemini AI" }
+                    span { class: "tab-label-short", "Gemini AI" }
                 }
                 button {
                     r#type: "button",
@@ -666,7 +688,111 @@ pub fn ManagementView(
                     }
                 },
 
-                // 4. CADANGAN & PEMULIHAN DATA (BACKUP & RESTORE)
+                // 4. INTEGRASI GOOGLE GEMINI AI
+                ManageTab::GeminiAi => rsx! {
+                    div { class: "manage-section max-w-xl space-y-4",
+                        div { class: "manage-section-header mb-3",
+                            div {
+                                h3 { class: "text-sm font-bold text-[var(--text-primary)]", "Integrasi Google Gemini AI" }
+                                p { class: "text-xs text-[var(--text-secondary)]", "Konfigurasi API Key untuk mengaktifkan AI Copilot cerdas." }
+                            }
+                        }
+
+                        div { class: "p-4 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface-subtle)] space-y-4",
+                            // Status Key
+                            div { class: "flex items-center justify-between",
+                                div { class: "flex items-center gap-2.5",
+                                    span { class: "w-8 h-8 rounded-lg bg-[var(--bg-surface-elevated)] border border-[var(--border-subtle)] flex items-center justify-center text-[var(--accent)] shrink-0",
+                                        IconKey { size: "15" }
+                                    }
+                                    div {
+                                        span { class: "text-xs font-semibold text-[var(--text-primary)] block", "Status API Key" }
+                                        if gemini_api_key.as_ref().map(|k| !k.trim().is_empty()).unwrap_or(false) {
+                                            span { class: "text-[11px] text-[var(--positive)] font-medium flex items-center gap-1",
+                                                IconCheck { size: "12" }
+                                                "Terhubung & Aktif (gemini-2.0-flash)"
+                                            }
+                                        } else {
+                                            span { class: "text-[11px] text-[var(--amber-500)] font-medium",
+                                                "Belum Diatur"
+                                            }
+                                        }
+                                    }
+                                }
+
+                                a {
+                                    href: "https://aistudio.google.com/app/apikey",
+                                    target: "_blank",
+                                    rel: "noopener noreferrer",
+                                    class: "btn-secondary text-xs px-2.5 py-1.5 flex items-center gap-1 text-[var(--text-secondary)]",
+                                    "Dapatkan Key Gratis"
+                                    IconArrowRight { size: "12" }
+                                }
+                            }
+
+                            // Form Input Key
+                            div { class: "space-y-1.5 pt-2 border-t border-[var(--border-subtle)]",
+                                label { class: "block text-xs font-semibold text-[var(--text-secondary)]", "Google Gemini API Key" }
+                                div { class: "relative",
+                                    input {
+                                        r#type: if *show_gemini_key.read() { "text" } else { "password" },
+                                        class: "field-input w-full pr-10 text-xs font-mono tabular-numbers",
+                                        placeholder: if gemini_api_key.is_some() { "••••••••••••••••••••••••••••••••" } else { "Masukkan Gemini API Key (AIzaSy...)" },
+                                        value: "{gemini_key_input}",
+                                        oninput: move |e| gemini_key_input.set(e.value()),
+                                    }
+                                    button {
+                                        r#type: "button",
+                                        class: "absolute right-2.5 top-1/2 -translate-y-1/2 text-[var(--text-muted)] hover:text-[var(--text-primary)]",
+                                        onclick: move |_| {
+                                            let next_val = !*show_gemini_key.read();
+                                            show_gemini_key.set(next_val);
+                                        },
+                                        if *show_gemini_key.read() {
+                                            IconEyeOff { size: "14" }
+                                        } else {
+                                            IconEye { size: "14" }
+                                        }
+                                    }
+                                }
+                                p { class: "text-[11px] text-[var(--text-muted)]",
+                                    "Key hanya tersimpan di LocalStorage browser perangkat Anda dan digunakan langsung untuk berkomunikasi dengan model gemini-2.0-flash."
+                                }
+                            }
+
+                            // Aksi Simpan / Hapus
+                            div { class: "flex items-center justify-end gap-2 pt-2",
+                                if gemini_api_key.as_ref().map(|k| !k.trim().is_empty()).unwrap_or(false) {
+                                    button {
+                                        r#type: "button",
+                                        class: "btn-secondary text-xs px-3 py-1.5 text-[var(--negative)] hover:bg-[var(--negative-bg)] flex items-center gap-1",
+                                        onclick: move |_| {
+                                            gemini_key_input.set(String::new());
+                                            on_delete_api_key.call(());
+                                        },
+                                        IconTrash { size: "13" }
+                                        "Hapus Key"
+                                    }
+                                }
+                                button {
+                                    r#type: "button",
+                                    class: "btn-primary text-xs px-4 py-1.5 flex items-center gap-1.5",
+                                    onclick: move |_| {
+                                        let val = gemini_key_input.read().trim().to_string();
+                                        if !val.is_empty() {
+                                            on_save_api_key.call(val);
+                                            gemini_key_input.set(String::new());
+                                        }
+                                    },
+                                    IconCheck { size: "14" }
+                                    "Simpan Perubahan"
+                                }
+                            }
+                        }
+                    }
+                },
+
+                // 5. CADANGAN & PEMULIHAN DATA (BACKUP & RESTORE)
                 ManageTab::BackupRestore => {
                     let total_trx = transactions.len();
                     let total_wallets = wallets.len();

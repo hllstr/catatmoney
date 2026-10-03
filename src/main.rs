@@ -12,6 +12,7 @@ use components::dashboard::MainDashboard;
 use components::detail_modal::DetailModal;
 use components::form_modal::TransactionModal;
 use components::history::TransactionHistory;
+use components::ai_copilot::AiCopilotView;
 use components::icons::{IconUser, IconWallet};
 use components::management::ManagementView;
 use components::onboarding::OnboardingWizard;
@@ -20,10 +21,11 @@ use components::savings::SavingsView;
 use components::wallet_modal::WalletModal;
 use model::{
     format_idr, get_default_categories, load_budgets, load_categories,
-    load_profile, load_savings_goals, load_savings_logs, load_theme, load_transactions, load_wallets,
-    reset_all_data, save_budgets, save_categories, save_profile, save_savings_goals, save_savings_logs,
-    save_theme, save_transactions, save_wallets,
-    CategoryBudget, SavingsGoal, SavingsLogEntry, ThemeMode, Transaction, TransactionType, UserCategories, UserProfile, Wallet,
+    load_gemini_api_key, load_profile, load_savings_goals, load_savings_logs, load_theme,
+    load_transactions, load_wallets, reset_all_data, save_budgets, save_categories,
+    save_gemini_api_key, save_profile, save_savings_goals, save_savings_logs, save_theme,
+    save_transactions, save_wallets, CategoryBudget, SavingsGoal, SavingsLogEntry,
+    ThemeMode, Transaction, TransactionType, UserCategories, UserProfile, Wallet,
 };
 
 const APP_STYLE: &str = include_str!("../assets/style.css");
@@ -97,6 +99,9 @@ pub fn App() -> Element {
     // State target tabungan & log kontribusi (disinkronkan dengan LocalStorage)
     let mut savings_goals = use_signal(load_savings_goals);
     let mut savings_logs = use_signal(load_savings_logs);
+
+    // State Google Gemini API Key (disinkronkan dengan LocalStorage)
+    let mut gemini_api_key = use_signal(load_gemini_api_key);
 
     // State navigasi tab aktif (Dashboard, Kalender, Riwayat, Kelola)
     let mut active_tab = use_signal(|| NavTab::Dashboard);
@@ -332,6 +337,44 @@ pub fn App() -> Element {
                                     },
                                 }
                             },
+                            NavTab::AiCopilot => rsx! {
+                                AiCopilotView {
+                                    user_name: profile.read().as_ref().map(|p| p.name.clone()).unwrap_or_else(|| "Pengguna".to_string()),
+                                    gemini_api_key: gemini_api_key.read().clone(),
+                                    transactions: transactions.read().clone(),
+                                    wallets: wallets.read().clone(),
+                                    categories: categories.read().clone(),
+                                    budgets: budgets.read().clone(),
+                                    savings_goals: savings_goals.read().clone(),
+                                    savings_logs: savings_logs.read().clone(),
+                                    on_save_api_key: move |key: String| {
+                                        save_gemini_api_key(Some(&key));
+                                        gemini_api_key.set(Some(key));
+                                    },
+                                    on_record_transaction: move |new_trx: Transaction| {
+                                        let mut list = transactions.write();
+                                        if let Some(pos) = list.iter().position(|t| t.id == new_trx.id) {
+                                            list[pos] = new_trx;
+                                        } else {
+                                            list.insert(0, new_trx);
+                                        }
+                                        save_transactions(&list);
+                                    },
+                                    on_update_budgets: move |new_budgets: Vec<CategoryBudget>| {
+                                        save_budgets(&new_budgets);
+                                        budgets.set(new_budgets);
+                                    },
+                                    on_update_goals: move |new_goals: Vec<SavingsGoal>| {
+                                        save_savings_goals(&new_goals);
+                                        savings_goals.set(new_goals);
+                                    },
+                                    on_update_logs: move |new_logs: Vec<SavingsLogEntry>| {
+                                        save_savings_logs(&new_logs);
+                                        savings_logs.set(new_logs);
+                                    },
+                                    on_go_to_settings: move |_| active_tab.set(NavTab::Management),
+                                }
+                            },
                             NavTab::Calendar => rsx! {
                                 FinancialCalendar {
                                     transactions: transactions.read().clone(),
@@ -359,6 +402,7 @@ pub fn App() -> Element {
                                     budgets: budgets.read().clone(),
                                     savings_goals: savings_goals.read().clone(),
                                     savings_logs: savings_logs.read().clone(),
+                                    gemini_api_key: gemini_api_key.read().clone(),
                                     current_theme: *theme.read(),
                                     on_change_theme: move |new_theme: ThemeMode| {
                                         theme.set(new_theme);
@@ -371,6 +415,14 @@ pub fn App() -> Element {
                                     on_update_categories: move |new_cats: UserCategories| {
                                         save_categories(&new_cats);
                                         categories.set(new_cats);
+                                    },
+                                    on_save_api_key: move |key: String| {
+                                        save_gemini_api_key(Some(&key));
+                                        gemini_api_key.set(Some(key));
+                                    },
+                                    on_delete_api_key: move |_| {
+                                        save_gemini_api_key(None);
+                                        gemini_api_key.set(None);
                                     },
                                     on_request_delete_wallet: move |w_name: String| {
                                         pending_delete.set(Some(PendingDelete::Wallet(w_name)));

@@ -271,6 +271,86 @@ pub fn IconX(#[props(default = "18")] size: &'static str) -> Element {
 }
 
 #[component]
+pub fn IconSend(#[props(default = "18")] size: &'static str) -> Element {
+    rsx! {
+        svg {
+            width: "{size}",
+            height: "{size}",
+            view_box: "0 0 24 24",
+            fill: "none",
+            stroke: "currentColor",
+            stroke_width: "1.75",
+            stroke_linecap: "round",
+            stroke_linejoin: "round",
+            path { d: "m22 2-7 20-4-9-9-4Z" }
+            path { d: "M22 2 11 13" }
+        }
+    }
+}
+
+#[component]
+pub fn IconKey(#[props(default = "18")] size: &'static str) -> Element {
+    rsx! {
+        svg {
+            width: "{size}",
+            height: "{size}",
+            view_box: "0 0 24 24",
+            fill: "none",
+            stroke: "currentColor",
+            stroke_width: "1.75",
+            stroke_linecap: "round",
+            stroke_linejoin: "round",
+            circle { cx: "7.5", cy: "15.5", r: "5.5" }
+            path { d: "m21 2-9.6 9.6" }
+            path { d: "m15.5 7.5 3 3L22 7l-3-3" }
+        }
+    }
+}
+
+#[component]
+pub fn IconBot(#[props(default = "18")] size: &'static str) -> Element {
+    rsx! {
+        svg {
+            width: "{size}",
+            height: "{size}",
+            view_box: "0 0 24 24",
+            fill: "none",
+            stroke: "currentColor",
+            stroke_width: "1.75",
+            stroke_linecap: "round",
+            stroke_linejoin: "round",
+            path { d: "M12 8V4H8" }
+            rect { width: "16", height: "12", x: "4", y: "8", rx: "2" }
+            path { d: "M2 14h2" }
+            path { d: "M20 14h2" }
+            path { d: "M15 13v2" }
+            path { d: "M9 13v2" }
+        }
+    }
+}
+
+
+#[component]
+pub fn IconEyeOff(#[props(default = "16")] size: &'static str) -> Element {
+    rsx! {
+        svg {
+            width: "{size}",
+            height: "{size}",
+            view_box: "0 0 24 24",
+            fill: "none",
+            stroke: "currentColor",
+            stroke_width: "1.75",
+            stroke_linecap: "round",
+            stroke_linejoin: "round",
+            path { d: "M9.88 9.88a3 3 0 1 0 4.24 4.24" }
+            path { d: "M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68" }
+            path { d: "M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61" }
+            line { x1: "2", x2: "22", y1: "2", y2: "22" }
+        }
+    }
+}
+
+#[component]
 pub fn IconChevronLeft(#[props(default = "16")] size: &'static str) -> Element {
     rsx! {
         svg {

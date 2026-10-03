@@ -118,6 +118,70 @@ pub const STORAGE_KEY_BUDGETS: &str = "catatmoney_budgets_v2";
 pub const STORAGE_KEY_SAVINGS_GOALS: &str = "catatmoney_savings_goals_v1";
 #[allow(dead_code)]
 pub const STORAGE_KEY_SAVINGS_LOGS: &str = "catatmoney_savings_logs_v1";
+#[allow(dead_code)]
+pub const STORAGE_KEY_GEMINI_API_KEY: &str = "catatmoney_gemini_api_key_v1";
+#[allow(dead_code)]
+pub const STORAGE_KEY_AI_CHAT_HISTORY: &str = "catatmoney_ai_chat_v1";
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub enum AiMessageRole {
+    User,
+    Assistant,
+}
+
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum AiProposedAction {
+    RecordTransaction {
+        title: String,
+        amount: f64,
+        transaction_type: TransactionType,
+        category: String,
+        wallet: String,
+        date: String,
+        time: String,
+        notes: String,
+        attachment: Option<String>,
+    },
+    DepositSavings {
+        goal_name: String,
+        amount: f64,
+        notes: String,
+    },
+    WithdrawSavings {
+        goal_name: String,
+        amount: f64,
+        notes: String,
+    },
+    SetBudget {
+        category: String,
+        monthly_limit: f64,
+    },
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub enum AiActionStatus {
+    Pending,
+    Confirmed,
+    Cancelled,
+}
+
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AiChatMessage {
+    pub id: String,
+    pub role: AiMessageRole,
+    pub text: String,
+    #[serde(default)]
+    pub proposed_action: Option<AiProposedAction>,
+    #[serde(default = "default_action_status")]
+    pub action_status: AiActionStatus,
+    #[serde(default)]
+    pub attachment_preview: Option<String>,
+    pub timestamp: String,
+}
+
+fn default_action_status() -> AiActionStatus {
+    AiActionStatus::Pending
+}
 
 pub const SAVINGS_CATEGORIES: &[&str] = &[
     "Dana Darurat",
@@ -407,6 +471,7 @@ pub fn reset_all_data() {
                 let _ = storage.remove_item("catatmoney_budgets_v1");
                 let _ = storage.remove_item(STORAGE_KEY_SAVINGS_GOALS);
                 let _ = storage.remove_item(STORAGE_KEY_SAVINGS_LOGS);
+                let _ = storage.remove_item(STORAGE_KEY_AI_CHAT_HISTORY);
             }
         }
     }
@@ -699,6 +764,78 @@ pub fn save_savings_logs(_logs: &[SavingsLogEntry]) {
             if let Ok(Some(storage)) = window.local_storage() {
                 if let Ok(raw_json) = serde_json::to_string(_logs) {
                     let _ = storage.set_item(STORAGE_KEY_SAVINGS_LOGS, &raw_json);
+                }
+            }
+        }
+    }
+}
+
+pub fn load_gemini_api_key() -> Option<String> {
+    #[cfg(target_arch = "wasm32")]
+    {
+        if let Some(window) = web_sys::window() {
+            if let Ok(Some(storage)) = window.local_storage() {
+                if let Ok(Some(val)) = storage.get_item(STORAGE_KEY_GEMINI_API_KEY) {
+                    let trimmed = val.trim();
+                    if !trimmed.is_empty() {
+                        return Some(trimmed.to_string());
+                    }
+                }
+            }
+        }
+    }
+    None
+}
+
+pub fn save_gemini_api_key(key: Option<&str>) {
+    let _ = key;
+    #[cfg(target_arch = "wasm32")]
+    {
+        if let Some(window) = web_sys::window() {
+            if let Ok(Some(storage)) = window.local_storage() {
+                if let Some(k) = key {
+                    let trimmed = k.trim();
+                    if trimmed.is_empty() {
+                        let _ = storage.remove_item(STORAGE_KEY_GEMINI_API_KEY);
+                    } else {
+                        let _ = storage.set_item(STORAGE_KEY_GEMINI_API_KEY, trimmed);
+                    }
+                } else {
+                    let _ = storage.remove_item(STORAGE_KEY_GEMINI_API_KEY);
+                }
+            }
+        }
+    }
+}
+
+pub fn load_ai_chat_history() -> Vec<AiChatMessage> {
+    #[cfg(target_arch = "wasm32")]
+    {
+        if let Some(window) = web_sys::window() {
+            if let Ok(Some(storage)) = window.local_storage() {
+                if let Ok(Some(raw_json)) = storage.get_item(STORAGE_KEY_AI_CHAT_HISTORY) {
+                    if let Ok(msgs) = serde_json::from_str::<Vec<AiChatMessage>>(&raw_json) {
+                        return msgs;
+                    }
+                }
+            }
+        }
+    }
+    vec![]
+}
+
+pub fn save_ai_chat_history(_msgs: &[AiChatMessage]) {
+    #[cfg(target_arch = "wasm32")]
+    {
+        if let Some(window) = web_sys::window() {
+            if let Ok(Some(storage)) = window.local_storage() {
+                let slice = if _msgs.len() > 50 {
+                    &_msgs[_msgs.len() - 50..]
+                } else {
+                    _msgs
+                };
+                if let Ok(raw_json) = serde_json::to_string(slice) {
+                    let _ = storage.set_item(STORAGE_KEY_AI_CHAT_HISTORY, &raw_json);
                 }
             }
         }
