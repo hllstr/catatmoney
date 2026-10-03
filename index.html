@@ -256,5 +256,30 @@
       }
     }, 5000);
   </script>
+
+  <script>
+    // Pendaftaran Service Worker untuk kapabilitas 100% Full Offline PWA
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', function() {
+        navigator.serviceWorker.register('/catatmoney/sw.js', { scope: '/catatmoney/' })
+          .then(function(reg) {
+            console.log('[PWA] Service Worker aktif dengan scope:', reg.scope);
+            reg.onupdatefound = function() {
+              var installingWorker = reg.installing;
+              if (installingWorker) {
+                installingWorker.onstatechange = function() {
+                  if (installingWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                    console.log('[PWA] Versi baru tersedia, siap diaktifkan.');
+                  }
+                };
+              }
+            };
+          })
+          .catch(function(err) {
+            console.warn('[PWA] Pendaftaran Service Worker gagal:', err);
+          });
+      });
+    }
+  </script>
 </body>
 </html>

@@ -65,6 +65,7 @@ jobs:
 
       - name: Build Web Application (Release)
         run: |
+          rm -rf target/dx/catatmoney/release/web/public
           dx build --release --web
           # Fallback 404 for GitHub Pages SPA routing
           if [ -f target/dx/catatmoney/release/web/public/index.html ]; then
@@ -77,6 +78,11 @@ jobs:
           fi
           if [ -f target/dx/catatmoney/release/web/public/tailwind.css ]; then
             cp target/dx/catatmoney/release/web/public/tailwind.css target/dx/catatmoney/release/web/public/assets/tailwind.css
+          fi
+          # Generate Service Worker dengan injeksi precache seluruh aset rilis
+          npm run generate:sw
+          if [ -f target/dx/catatmoney/release/web/public/sw.js ]; then
+            cp target/dx/catatmoney/release/web/public/sw.js target/dx/catatmoney/release/web/public/assets/sw.js
           fi
 
       - name: Setup GitHub Pages
