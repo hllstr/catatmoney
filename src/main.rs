@@ -65,6 +65,14 @@ pub fn App() -> Element {
         }
     });
 
+    // Hilangkan loading screen setelah aplikasi Dioxus terpasang dan styles terverifikasi
+    use_effect(move || {
+        #[cfg(target_arch = "wasm32")]
+        {
+            let _ = js_sys::eval("if (window.__dismissCatatMoneyLoader) { window.__dismissCatatMoneyLoader(); }");
+        }
+    });
+
     // State profil pengguna (disinkronkan dengan LocalStorage)
     let mut profile = use_signal(load_profile);
 

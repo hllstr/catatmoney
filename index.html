@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title></title>
+  <meta name="description" content="Aplikasi pencatatan keuangan pribadi minimalis, elegan, dan offline-first.">
+  <meta name="theme-color" content="#09090b">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="CatatMoney">
+  <link rel="manifest" href="/catatmoney/manifest.json">
+  <link rel="icon" type="image/svg+xml" href="/catatmoney/icon.svg">
+  <link rel="apple-touch-icon" href="/catatmoney/icon.svg">
+
+  <!-- Preconnect Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/catatmoney/assets/style.css">
+
+  <script>
+    // Inisialisasi tema sebelum render untuk mencegah flash
+    (function() {
+      try {
+        var savedTheme = localStorage.getItem('catatmoney_theme_mode');
+        var isLight = savedTheme === 'light';
+        if (isLight) {
+          document.documentElement.classList.add('light');
+          document.documentElement.classList.remove('dark');
+          document.documentElement.style.backgroundColor = '#f8fafc';
+        } else {
+          document.documentElement.classList.add('dark');
+          document.documentElement.classList.remove('light');
+          document.documentElement.style.backgroundColor = '#09090b';
+        }
+      } catch (e) {}
+    })();
+  </script>
+
+  <style>
+    :root {
+      --loader-bg: #09090b;
+      --loader-card: #121214;
+      --loader-border: #27272a;
+      --loader-text: #f4f4f5;
+      --loader-muted: #71717a;
+      --loader-accent: #ffffff;
+      --loader-bar-bg: #1f1f23;
+    }
+
+    html.light {
+      --loader-bg: #f8fafc;
+      --loader-card: #ffffff;
+      --loader-border: #e2e8f0;
+      --loader-text: #09090b;
+      --loader-muted: #64748b;
+      --loader-accent: #09090b;
+      --loader-bar-bg: #e2e8f0;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html, body {
+      background-color: var(--loader-bg);
+      color: var(--loader-text);
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      min-height: 100vh;
+      overflow-x: hidden;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    #app-loader {
+      position: fixed;
+      inset: 0;
+      z-index: 999999;
+      background-color: var(--loader-bg);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      transition: opacity 0.4s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.4s ease;
+      will-change: opacity, visibility;
+    }
+
+    #app-loader.fade-out {
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+    }
+
+    .loader-content {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      max-width: 320px;
+      width: 100%;
+    }
+
+    .loader-icon-box {
+      width: 68px;
+      height: 68px;
+      border-radius: 20px;
+      background-color: var(--loader-card);
+      border: 1px solid var(--loader-border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 20px;
+      position: relative;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+      animation: loaderPulse 2.4s ease-in-out infinite;
+    }
+
+    @keyframes loaderPulse {
+      0%, 100% {
+        transform: scale(1);
+        border-color: var(--loader-border);
+      }
+      50% {
+        transform: scale(1.03);
+        border-color: var(--loader-muted);
+      }
+    }
+
+    .loader-icon-svg {
+      width: 30px;
+      height: 30px;
+      color: var(--loader-accent);
+      stroke-width: 1.75;
+    }
+
+    .loader-title {
+      font-size: 1.25rem;
+      font-weight: 700;
+      letter-spacing: -0.025em;
+      color: var(--loader-text);
+      margin-bottom: 6px;
+    }
+
+    .loader-subtitle {
+      font-size: 0.78rem;
+      color: var(--loader-muted);
+      letter-spacing: 0.01em;
+      margin-bottom: 28px;
+      font-weight: 400;
+    }
+
+    .loader-progress-track {
+      width: 100%;
+      height: 3px;
+      background-color: var(--loader-bar-bg);
+      border-radius: 9999px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .loader-progress-bar {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      left: 0;
+      width: 40%;
+      background: var(--loader-accent);
+      border-radius: 9999px;
+      animation: loaderShimmer 1.4s cubic-bezier(0.65, 0, 0.35, 1) infinite;
+    }
+
+    @keyframes loaderShimmer {
+      0% {
+        left: -40%;
+        width: 30%;
+      }
+      50% {
+        left: 30%;
+        width: 50%;
+      }
+      100% {
+        left: 100%;
+        width: 30%;
+      }
+    }
+
+    .loader-status {
+      margin-top: 14px;
+      font-size: 0.72rem;
+      font-weight: 500;
+      color: var(--loader-muted);
+      letter-spacing: 0.02em;
+    }
+  </style>
+</head>
+<body>
+  <div id="app-loader">
+    <div class="loader-content">
+      <div class="loader-icon-box">
+        <!-- SVG Lucide Wallet (Clean Monokromatik) -->
+        <svg class="loader-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1"></path>
+          <path d="M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4"></path>
+        </svg>
+      </div>
+      <h1 class="loader-title">CatatMoney</h1>
+      <p class="loader-subtitle">Financial Cashflow & Expense Intelligence</p>
+      <div class="loader-progress-track">
+        <div class="loader-progress-bar"></div>
+      </div>
+      <span class="loader-status">Menyiapkan antarmuka...</span>
+    </div>
+  </div>
+
+  <div id="main"></div>
+
+  <script>
+    // Fungsi sinkronisasi hilangkan loader secara anggun setelah style & font terverifikasi
+    window.__dismissCatatMoneyLoader = function() {
+      var loader = document.getElementById('app-loader');
+      if (!loader || loader.classList.contains('fade-out')) return;
+
+      var fontReadyPromise = (document.fonts && document.fonts.ready)
+        ? document.fonts.ready
+        : Promise.resolve();
+
+      // Berikan durasi minimum 350ms agar animasi transisi halus terasa natural (bukan flash sekejap)
+      var minDelayPromise = new Promise(function(resolve) {
+        setTimeout(resolve, 350);
+      });
+
+      Promise.all([fontReadyPromise, minDelayPromise]).then(function() {
+        requestAnimationFrame(function() {
+          requestAnimationFrame(function() {
+            loader.classList.add('fade-out');
+            setTimeout(function() {
+              if (loader.parentNode) {
+                loader.parentNode.removeChild(loader);
+              }
+            }, 450);
+          });
+        });
+      });
+    };
+
+    // Safety fallback: jika dalam 5 detik belum dipanggil oleh wasm, hilangkan otomatis
+    setTimeout(function() {
+      if (window.__dismissCatatMoneyLoader) {
+        window.__dismissCatatMoneyLoader();
+      }
+    }, 5000);
+  </script>
+</body>
+</html>

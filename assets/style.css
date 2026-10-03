@@ -99,7 +99,20 @@ body {
   max-width: 960px;
   margin: 0 auto;
   padding: 2.25rem 1.25rem 7.5rem; /* bottom padding untuk dock */
+  animation: fadeInApp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
+
+@keyframes fadeInApp {
+  from {
+    opacity: 0;
+    transform: translateY(3px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 
 /* Header */
 .app-header {
@@ -2169,6 +2182,7 @@ body {
   padding: 1.5rem 1rem;
   max-width: 620px;
   margin: 0 auto;
+  animation: fadeInApp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 .onboarding-top-bar {
