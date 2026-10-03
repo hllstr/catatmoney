@@ -23,6 +23,7 @@ use model::{
 };
 
 const APP_STYLE: &str = include_str!("../assets/style.css");
+const APP_TAILWIND: &str = include_str!("../assets/tailwind.css");
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum PendingDelete {
@@ -165,14 +166,10 @@ pub fn App() -> Element {
     let is_onboarded = profile.read().as_ref().map(|p| p.is_onboarded).unwrap_or(false);
 
     rsx! {
-        // Tailwind CSS & Google Fonts Plus Jakarta Sans dengan inisialisasi aman
-        script { src: "https://cdn.tailwindcss.com" }
-        script {
-            "if (typeof tailwind !== 'undefined') {{ tailwind.config = {{ darkMode: 'class', theme: {{ extend: {{ fontFamily: {{ sans: ['Plus Jakarta Sans', 'sans-serif'] }} }} }} }}; }} else {{ window.addEventListener('load', function() {{ if (typeof tailwind !== 'undefined') tailwind.config = {{ darkMode: 'class', theme: {{ extend: {{ fontFamily: {{ sans: ['Plus Jakarta Sans', 'sans-serif'] }} }} }} }}; }}); }}"
-        }
         document::Title { "CatatMoney - Financial Cashflow & Expense Intelligence" }
         document::Meta { name: "description", content: "Aplikasi pencatatan keuangan pribadi minimalis, elegan, dan offline-first." }
         document::Meta { name: "theme-color", content: "#09090b" }
+        document::Meta { name: "mobile-web-app-capable", content: "yes" }
         document::Meta { name: "apple-mobile-web-app-capable", content: "yes" }
         document::Meta { name: "apple-mobile-web-app-status-bar-style", content: "black-translucent" }
         document::Meta { name: "apple-mobile-web-app-title", content: "CatatMoney" }
@@ -193,7 +190,8 @@ pub fn App() -> Element {
             href: "https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap",
         }
 
-        // Sematkan stylesheet desain sistem monokromatik
+        // Sematkan stylesheet Tailwind hasil kompilasi CLI & desain sistem monokromatik
+        style { "{APP_TAILWIND}" }
         style { "{APP_STYLE}" }
 
         // Root container yang menerapkan class dark atau light dan menangani shortcut keyboard ESC

@@ -53,12 +53,30 @@ jobs:
           fi
           dx --version
 
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Build Tailwind CSS
+        run: |
+          npm ci || npm install
+          npm run build:css
+
       - name: Build Web Application (Release)
         run: |
           dx build --release --web
           # Fallback 404 for GitHub Pages SPA routing
           if [ -f target/dx/catatmoney/release/web/public/index.html ]; then
             cp target/dx/catatmoney/release/web/public/index.html target/dx/catatmoney/release/web/public/404.html
+          fi
+          # Ensure assets mirror directory exists so both /catatmoney/style.css and /catatmoney/assets/style.css resolve to real files
+          mkdir -p target/dx/catatmoney/release/web/public/assets
+          if [ -f target/dx/catatmoney/release/web/public/style.css ]; then
+            cp target/dx/catatmoney/release/web/public/style.css target/dx/catatmoney/release/web/public/assets/style.css
+          fi
+          if [ -f target/dx/catatmoney/release/web/public/tailwind.css ]; then
+            cp target/dx/catatmoney/release/web/public/tailwind.css target/dx/catatmoney/release/web/public/assets/tailwind.css
           fi
 
       - name: Setup GitHub Pages
