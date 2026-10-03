@@ -113,7 +113,7 @@ pub const STORAGE_KEY_CATEGORIES: &str = "catatmoney_categories_v1";
 #[allow(dead_code)]
 pub const STORAGE_KEY_PROFILE: &str = "catatmoney_profile_v1";
 #[allow(dead_code)]
-pub const STORAGE_KEY_BUDGETS: &str = "catatmoney_budgets_v1";
+pub const STORAGE_KEY_BUDGETS: &str = "catatmoney_budgets_v2";
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CategoryBudget {
@@ -347,6 +347,7 @@ pub fn reset_all_data() {
                 let _ = storage.remove_item(STORAGE_KEY_CATEGORIES);
                 let _ = storage.remove_item(STORAGE_KEY_PROFILE);
                 let _ = storage.remove_item(STORAGE_KEY_BUDGETS);
+                let _ = storage.remove_item("catatmoney_budgets_v1");
             }
         }
     }
@@ -571,7 +572,7 @@ pub fn load_budgets() -> Vec<CategoryBudget> {
             }
         }
     }
-    get_default_budgets()
+    vec![]
 }
 
 pub fn save_budgets(_budgets: &[CategoryBudget]) {

@@ -11,7 +11,7 @@ pub fn ConfirmModal(
 ) -> Element {
     rsx! {
         div {
-            class: "modal-backdrop",
+            class: "modal-backdrop modal-backdrop-center",
             onclick: move |_| on_cancel.call(()),
             div {
                 class: "modal-dialog max-w-md",

@@ -135,117 +135,119 @@ pub fn BudgetView(
                 }
             }
 
-            // 4 Executive Budget Health Cards
-            div { class: "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6",
-                // Kartu 1: Total Anggaran Bulanan
-                div { class: "p-4 rounded-xl bg-[var(--bg-card)] border border-[var(--border-subtle)] flex flex-col justify-between",
-                    div { class: "flex items-center justify-between mb-2",
-                        span { class: "text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wider", "Total Anggaran" }
-                        IconTarget { size: "14" }
-                    }
-                    div { class: "text-xl font-bold tabular-numbers text-[var(--text-primary)]",
-                        "{format_idr(total_budget)}"
-                    }
-                    p { class: "text-[11px] text-[var(--text-muted)] mt-1.5",
-                        "{budgets.len()} pos kategori dialokasikan"
-                    }
-                }
-
-                // Kartu 2: Realisasi Terpakai
-                div { class: "p-4 rounded-xl bg-[var(--bg-card)] border border-[var(--border-subtle)] flex flex-col justify-between",
-                    div { class: "flex items-center justify-between mb-2",
-                        span { class: "text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wider", "Realisasi Belanja" }
-                        span { class: "text-xs font-bold tabular-numbers text-[var(--text-primary)]",
-                            "{overall_usage_pct:.1}%"
+            if !budgets.is_empty() {
+                // 4 Executive Budget Health Cards
+                div { class: "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6",
+                    // Kartu 1: Total Anggaran Bulanan
+                    div { class: "p-4 rounded-xl bg-[var(--bg-card)] border border-[var(--border-subtle)] flex flex-col justify-between",
+                        div { class: "flex items-center justify-between mb-2",
+                            span { class: "text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wider", "Total Anggaran" }
+                            IconTarget { size: "14" }
+                        }
+                        div { class: "text-xl font-bold tabular-numbers text-[var(--text-primary)]",
+                            "{format_idr(total_budget)}"
+                        }
+                        p { class: "text-[11px] text-[var(--text-muted)] mt-1.5",
+                            "{budgets.len()} pos kategori dialokasikan"
                         }
                     }
-                    div { class: "text-xl font-bold tabular-numbers text-[var(--text-primary)]",
-                        "{format_idr(total_budgeted_spent)}"
-                    }
-                    div { class: "w-full bg-[var(--bg-surface-subtle)] rounded-full h-1.5 overflow-hidden mt-2",
-                        div {
-                            class: if overall_usage_pct >= 100.0 { "bg-[var(--negative)] h-full rounded-full transition-all" } else if overall_usage_pct >= 75.0 { "bg-[var(--amber-500)] h-full rounded-full transition-all" } else { "bg-[var(--positive)] h-full rounded-full transition-all" },
-                            style: "width: {overall_usage_pct.min(100.0)}%;",
-                        }
-                    }
-                }
 
-                // Kartu 3: Sisa Anggaran Tersedia
-                div { class: "p-4 rounded-xl bg-[var(--bg-card)] border border-[var(--border-subtle)] flex flex-col justify-between",
-                    div { class: "flex items-center justify-between mb-2",
-                        span { class: "text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wider", "Sisa Anggaran" }
-                        if total_remaining >= 0.0 {
-                            span { class: "inline-flex items-center gap-1 text-[11px] font-semibold text-[var(--positive)] bg-[var(--positive-bg)] px-2 py-0.5 rounded-full border border-[var(--positive-border)]",
-                                IconTrendingUp { size: "11" }
-                                "Aman"
+                    // Kartu 2: Realisasi Terpakai
+                    div { class: "p-4 rounded-xl bg-[var(--bg-card)] border border-[var(--border-subtle)] flex flex-col justify-between",
+                        div { class: "flex items-center justify-between mb-2",
+                            span { class: "text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wider", "Realisasi Belanja" }
+                            span { class: "text-xs font-bold tabular-numbers text-[var(--text-primary)]",
+                                "{overall_usage_pct:.1}%"
                             }
-                        } else {
-                            span { class: "inline-flex items-center gap-1 text-[11px] font-semibold text-[var(--negative)] bg-[var(--negative-bg)] px-2 py-0.5 rounded-full border border-[var(--negative-border)]",
-                                IconTrendingDown { size: "11" }
-                                "Overbudget"
+                        }
+                        div { class: "text-xl font-bold tabular-numbers text-[var(--text-primary)]",
+                            "{format_idr(total_budgeted_spent)}"
+                        }
+                        div { class: "w-full bg-[var(--bg-surface-subtle)] rounded-full h-1.5 overflow-hidden mt-2",
+                            div {
+                                class: if overall_usage_pct >= 100.0 { "bg-[var(--negative)] h-full rounded-full transition-all" } else if overall_usage_pct >= 75.0 { "bg-[var(--amber-500)] h-full rounded-full transition-all" } else { "bg-[var(--positive)] h-full rounded-full transition-all" },
+                                style: "width: {overall_usage_pct.min(100.0)}%;",
                             }
                         }
                     }
-                    div {
-                        class: if total_remaining >= 0.0 { "text-xl font-bold tabular-numbers text-[var(--positive)]" } else { "text-xl font-bold tabular-numbers text-[var(--negative)]" },
-                        if total_remaining >= 0.0 {
-                            "{format_idr(total_remaining)}"
-                        } else {
-                            "-{format_idr(total_remaining.abs())}"
+
+                    // Kartu 3: Sisa Anggaran Tersedia
+                    div { class: "p-4 rounded-xl bg-[var(--bg-card)] border border-[var(--border-subtle)] flex flex-col justify-between",
+                        div { class: "flex items-center justify-between mb-2",
+                            span { class: "text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wider", "Sisa Anggaran" }
+                            if total_remaining >= 0.0 {
+                                span { class: "inline-flex items-center gap-1 text-[11px] font-semibold text-[var(--positive)] bg-[var(--positive-bg)] px-2 py-0.5 rounded-full border border-[var(--positive-border)]",
+                                    IconTrendingUp { size: "11" }
+                                    "Aman"
+                                }
+                            } else {
+                                span { class: "inline-flex items-center gap-1 text-[11px] font-semibold text-[var(--negative)] bg-[var(--negative-bg)] px-2 py-0.5 rounded-full border border-[var(--negative-border)]",
+                                    IconTrendingDown { size: "11" }
+                                    "Overbudget"
+                                }
+                            }
                         }
-                    }
-                    p { class: "text-[11px] text-[var(--text-muted)] mt-1.5",
-                        if total_remaining >= 0.0 { "Kapasitas belanja sisa bulan ini" } else { "Pengeluaran melebihi total pagu" }
-                    }
-                }
-
-                // Kartu 4: Pagu Belanja Aman Harian (Daily Safe-to-Spend)
-                div { class: "p-4 rounded-xl bg-[var(--bg-card)] border border-[var(--border-subtle)] flex flex-col justify-between",
-                    div { class: "flex items-center justify-between mb-2",
-                        span { class: "text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wider", "Pagu Harian Aman" }
-                        span { class: "text-[10px] text-[var(--text-muted)]", "{remaining_days} hari tersisa" }
-                    }
-                    div { class: "text-xl font-bold tabular-numbers text-[var(--text-primary)]",
-                        "{format_idr(daily_safe_spend)}"
-                        span { class: "text-xs text-[var(--text-muted)] font-normal", " /hari" }
-                    }
-                    p { class: "text-[11px] text-[var(--text-muted)] mt-1.5",
-                        "Maksimal belanja harian agar tidak boncos."
-                    }
-                }
-            }
-
-            // Banner Indikator Pacing Kalender vs Anggaran
-            div { class: "p-4 rounded-xl bg-[var(--bg-card)] border border-[var(--border-subtle)] mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4",
-                div { class: "flex items-start sm:items-center gap-3",
-                    span { class: "inline-flex items-center px-2.5 py-1 rounded-lg border text-xs font-bold shrink-0 {pacing_badge_class}",
-                        "{pacing_label}"
-                    }
-                    div {
-                        p { class: "text-xs font-semibold text-[var(--text-primary)]", "{pacing_desc}" }
-                        p { class: "text-[11px] text-[var(--text-muted)] mt-0.5",
-                            "Hari ke-{current_day} dari {total_days_in_month} hari ({month_progress_pct:.0}% bulan berjalan) vs {overall_usage_pct:.0}% anggaran terpakai."
-                        }
-                    }
-                }
-
-                // Visual Mini Perbandingan Dual Bar
-                div { class: "w-full md:w-56 shrink-0 space-y-1.5 text-[11px]",
-                    div { class: "flex justify-between text-[10px] text-[var(--text-muted)]",
-                        span { "Perjalanan Waktu" }
-                        span { class: "tabular-numbers", "{month_progress_pct:.0}%" }
-                    }
-                    div { class: "w-full bg-[var(--bg-surface-subtle)] rounded-full h-1 overflow-hidden",
-                        div { class: "bg-[var(--text-muted)] h-full rounded-full", style: "width: {month_progress_pct}%;" }
-                    }
-                    div { class: "flex justify-between text-[10px] text-[var(--text-muted)] pt-0.5",
-                        span { "Anggaran Terpakai" }
-                        span { class: "tabular-numbers", "{overall_usage_pct:.0}%" }
-                    }
-                    div { class: "w-full bg-[var(--bg-surface-subtle)] rounded-full h-1 overflow-hidden",
                         div {
-                            class: if overall_usage_pct > 100.0 { "bg-[var(--negative)] h-full rounded-full" } else if overall_usage_pct > 75.0 { "bg-[var(--amber-500)] h-full rounded-full" } else { "bg-[var(--positive)] h-full rounded-full" },
-                            style: "width: {overall_usage_pct.min(100.0)}%;",
+                            class: if total_remaining >= 0.0 { "text-xl font-bold tabular-numbers text-[var(--positive)]" } else { "text-xl font-bold tabular-numbers text-[var(--negative)]" },
+                            if total_remaining >= 0.0 {
+                                "{format_idr(total_remaining)}"
+                            } else {
+                                "-{format_idr(total_remaining.abs())}"
+                            }
+                        }
+                        p { class: "text-[11px] text-[var(--text-muted)] mt-1.5",
+                            if total_remaining >= 0.0 { "Kapasitas belanja sisa bulan ini" } else { "Pengeluaran melebihi total pagu" }
+                        }
+                    }
+
+                    // Kartu 4: Pagu Belanja Aman Harian (Daily Safe-to-Spend)
+                    div { class: "p-4 rounded-xl bg-[var(--bg-card)] border border-[var(--border-subtle)] flex flex-col justify-between",
+                        div { class: "flex items-center justify-between mb-2",
+                            span { class: "text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wider", "Pagu Harian Aman" }
+                            span { class: "text-[10px] text-[var(--text-muted)]", "{remaining_days} hari tersisa" }
+                        }
+                        div { class: "text-xl font-bold tabular-numbers text-[var(--text-primary)]",
+                            "{format_idr(daily_safe_spend)}"
+                            span { class: "text-xs text-[var(--text-muted)] font-normal", " /hari" }
+                        }
+                        p { class: "text-[11px] text-[var(--text-muted)] mt-1.5",
+                            "Maksimal belanja harian agar tidak boncos."
+                        }
+                    }
+                }
+
+                // Banner Indikator Pacing Kalender vs Anggaran
+                div { class: "p-4 rounded-xl bg-[var(--bg-card)] border border-[var(--border-subtle)] mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4",
+                    div { class: "flex items-start sm:items-center gap-3",
+                        span { class: "inline-flex items-center px-2.5 py-1 rounded-lg border text-xs font-bold shrink-0 {pacing_badge_class}",
+                            "{pacing_label}"
+                        }
+                        div {
+                            p { class: "text-xs font-semibold text-[var(--text-primary)]", "{pacing_desc}" }
+                            p { class: "text-[11px] text-[var(--text-muted)] mt-0.5",
+                                "Hari ke-{current_day} dari {total_days_in_month} hari ({month_progress_pct:.0}% bulan berjalan) vs {overall_usage_pct:.0}% anggaran terpakai."
+                            }
+                        }
+                    }
+
+                    // Visual Mini Perbandingan Dual Bar
+                    div { class: "w-full md:w-56 shrink-0 space-y-1.5 text-[11px]",
+                        div { class: "flex justify-between text-[10px] text-[var(--text-muted)]",
+                            span { "Perjalanan Waktu" }
+                            span { class: "tabular-numbers", "{month_progress_pct:.0}%" }
+                        }
+                        div { class: "w-full bg-[var(--bg-surface-subtle)] rounded-full h-1 overflow-hidden",
+                            div { class: "bg-[var(--text-muted)] h-full rounded-full", style: "width: {month_progress_pct}%;" }
+                        }
+                        div { class: "flex justify-between text-[10px] text-[var(--text-muted)] pt-0.5",
+                            span { "Anggaran Terpakai" }
+                            span { class: "tabular-numbers", "{overall_usage_pct:.0}%" }
+                        }
+                        div { class: "w-full bg-[var(--bg-surface-subtle)] rounded-full h-1 overflow-hidden",
+                            div {
+                                class: if overall_usage_pct > 100.0 { "bg-[var(--negative)] h-full rounded-full" } else if overall_usage_pct > 75.0 { "bg-[var(--amber-500)] h-full rounded-full" } else { "bg-[var(--positive)] h-full rounded-full" },
+                                style: "width: {overall_usage_pct.min(100.0)}%;",
+                            }
                         }
                     }
                 }
@@ -445,8 +447,12 @@ pub fn BudgetView(
                     .unwrap_or_else(|| "Anggaran".to_string());
 
                 rsx! {
-                    div { class: "modal-backdrop",
-                        div { class: "modal-dialog max-w-sm",
+                    div {
+                        class: "modal-backdrop modal-backdrop-center",
+                        onclick: move |_| budget_to_delete.set(None),
+                        div {
+                            class: "modal-dialog max-w-sm",
+                            onclick: move |e| e.stop_propagation(),
                             div { class: "modal-header",
                                 h3 { class: "modal-title", "Hapus Anggaran" }
                             }
@@ -512,7 +518,7 @@ fn BudgetModal(
     let (initial_amount, initial_formatted) = if let Some(ref b) = editing_budget {
         parse_input_idr(&b.monthly_limit.round().to_string())
     } else {
-        parse_input_idr("1500000")
+        (0.0, String::new())
     };
 
     let mut selected_category = use_signal(|| initial_cat);
@@ -556,15 +562,19 @@ fn BudgetModal(
     };
 
     rsx! {
-        div { class: "modal-backdrop",
-            div { class: "modal-dialog max-w-md",
+        div {
+            class: "modal-backdrop modal-backdrop-center",
+            onclick: move |_| on_close.call(()),
+            div {
+                class: "modal-dialog max-w-md",
+                onclick: move |e| e.stop_propagation(),
                 div { class: "modal-header flex items-center justify-between pb-3 border-b border-[var(--border-subtle)]",
                     h3 { class: "modal-title text-base font-bold text-[var(--text-primary)]",
                         if is_editing { "Ubah Batas Anggaran" } else { "Alokasi Anggaran Baru" }
                     }
                     button {
                         r#type: "button",
-                        class: "w-7 h-7 rounded-lg hover:bg-[var(--bg-surface-elevated)] flex items-center justify-center text-[var(--text-muted)]",
+                        class: "w-7 h-7 rounded-lg hover:bg-[var(--bg-surface-elevated)] flex items-center justify-center text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors",
                         onclick: move |_| on_close.call(()),
                         "✕"
                     }
@@ -594,12 +604,12 @@ fn BudgetModal(
                     // Input Nominal Batas Bulanan
                     div { class: "field-group",
                         label { class: "block text-xs font-semibold text-[var(--text-secondary)] mb-1.5", "Batas Anggaran Bulanan (Rp)" }
-                        div { class: "relative",
-                            span { class: "absolute left-3 top-1/2 -translate-y-1/2 text-xs font-bold text-[var(--text-muted)]", "Rp" }
+                        div { class: "currency-input-box",
+                            span { class: "currency-prefix tabular-numbers", "Rp" }
                             input {
                                 r#type: "text",
                                 inputmode: "numeric",
-                                class: "field-input w-full pl-9 tabular-numbers font-bold text-base",
+                                class: "field-input currency-input tabular-numbers",
                                 placeholder: "0",
                                 value: "{amount_input.read()}",
                                 oninput: handle_amount_change,

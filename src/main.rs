@@ -18,7 +18,7 @@ use components::onboarding::OnboardingWizard;
 use components::profile_modal::ProfileModal;
 use components::wallet_modal::WalletModal;
 use model::{
-    format_idr, get_default_budgets, get_default_categories, load_budgets, load_categories,
+    format_idr, get_default_categories, load_budgets, load_categories,
     load_profile, load_theme, load_transactions, load_wallets, reset_all_data, save_budgets,
     save_categories, save_profile, save_theme, save_transactions, save_wallets,
     CategoryBudget, ThemeMode, Transaction, TransactionType, UserCategories, UserProfile, Wallet,
@@ -239,6 +239,9 @@ pub fn App() -> Element {
                         let default_cats = get_default_categories();
                         save_categories(&default_cats);
                         categories.set(default_cats);
+
+                        save_budgets(&[]);
+                        budgets.set(vec![]);
                     },
                 }
             } else {
@@ -515,7 +518,8 @@ pub fn App() -> Element {
                                 transactions.set(vec![]);
                                 wallets.set(vec![]);
                                 categories.set(get_default_categories());
-                                budgets.set(get_default_budgets());
+                                save_budgets(&[]);
+                                budgets.set(vec![]);
                                 pending_delete.set(None);
 
                             },
