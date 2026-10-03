@@ -1,14 +1,14 @@
 use dioxus::prelude::*;
 use crate::components::icons::{
     CategoryIcon, IconAlertTriangle, IconArrowDownRight, IconArrowUpRight, IconBanknote, IconCheck,
-    IconCreditCard, IconDownload, IconEdit, IconLandmark, IconPlus, IconSliders, IconSmartphone,
-    IconTrash, IconUpload, IconWallet, IconX, WalletIcon,
+    IconCreditCard, IconDownload, IconEdit, IconLandmark, IconMoon, IconPlus, IconSliders,
+    IconSmartphone, IconSparkles, IconSun, IconTrash, IconUpload, IconWallet, IconX, WalletIcon,
 };
 #[allow(unused_imports)]
 use crate::model::{
     create_backup, format_idr, generate_id, get_today_date, parse_input_idr,
-    trigger_json_download, CatatMoneyBackup, Transaction, TransactionType, UserCategories,
-    UserProfile, Wallet, WalletType,
+    trigger_json_download, CatatMoneyBackup, ThemeMode, Transaction, TransactionType,
+    UserCategories, UserProfile, Wallet, WalletType,
 };
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
@@ -16,6 +16,7 @@ pub enum ManageTab {
     Wallets,
     ExpenseCategories,
     IncomeCategories,
+    Theme,
     BackupRestore,
 }
 
@@ -25,6 +26,8 @@ pub fn ManagementView(
     transactions: Vec<Transaction>,
     wallets: Vec<Wallet>,
     categories: UserCategories,
+    current_theme: ThemeMode,
+    on_change_theme: EventHandler<ThemeMode>,
     on_update_wallets: EventHandler<Vec<Wallet>>,
     on_update_categories: EventHandler<UserCategories>,
     on_request_delete_wallet: EventHandler<String>,
@@ -107,6 +110,23 @@ pub fn ManagementView(
                     IconArrowUpRight { size: "15" }
                     span { class: "tab-label-full", "Kategori Pemasukan ({categories.income.len()})" }
                     span { class: "tab-label-short", "Pemasukan ({categories.income.len()})" }
+                }
+                button {
+                    r#type: "button",
+                    class: if *active_subtab.read() == ManageTab::Theme { "manage-tab-btn active" } else { "manage-tab-btn" },
+                    onclick: move |_| {
+                        active_subtab.set(ManageTab::Theme);
+                        is_adding_wallet.set(false);
+                        editing_wallet_id.set(None);
+                        is_adding_cat.set(false);
+                    },
+                    if current_theme == ThemeMode::Dark {
+                        IconMoon { size: "15" }
+                    } else {
+                        IconSun { size: "15" }
+                    }
+                    span { class: "tab-label-full", "Tema & Tampilan" }
+                    span { class: "tab-label-short", "Tema" }
                 }
                 button {
                     r#type: "button",
@@ -568,7 +588,82 @@ pub fn ManagementView(
                     }
                 },
 
-                // 3. CADANGAN & PEMULIHAN DATA (BACKUP & RESTORE)
+                // 3. TEMA & TAMPILAN ANTARMUKA
+                ManageTab::Theme => rsx! {
+                    div { class: "manage-section",
+                        div { class: "manage-section-header mb-5",
+                            div {
+                                h3 { class: "text-sm font-bold text-[var(--text-primary)]", "Tema & Tampilan Antarmuka" }
+                                p { class: "text-xs text-muted mt-0.5",
+                                    "Pilih gaya visual CatatMoney sesuai preferensi dan kenyamanan membaca data Anda."
+                                }
+                            }
+                        }
+
+                        div { class: "theme-picker-grid grid grid-cols-1 sm:grid-cols-2 gap-4",
+                            // Kartu Obsidian Dark
+                            div {
+                                class: if current_theme == ThemeMode::Dark { "theme-card active cursor-pointer" } else { "theme-card cursor-pointer" },
+                                onclick: move |_| on_change_theme.call(ThemeMode::Dark),
+                                div { class: "theme-card-header flex items-center justify-between mb-3",
+                                    div { class: "flex items-center gap-2",
+                                        div { class: "w-7 h-7 rounded-lg bg-[#18181c] border border-[#27272a] flex items-center justify-center text-[#fafafa]",
+                                            IconMoon { size: "14" }
+                                        }
+                                        span { class: "text-sm font-bold text-[var(--text-primary)]", "Obsidian Dark" }
+                                    }
+                                    if current_theme == ThemeMode::Dark {
+                                        span { class: "px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-[var(--text-primary)] text-[var(--bg-app)]", "Aktif" }
+                                    }
+                                }
+                                p { class: "text-xs text-[var(--text-secondary)] leading-relaxed mb-4",
+                                    "Gaya gelap monokromatik Swiss FinTech berfokus pada ketajaman data dan kenyamanan mata di ruangan redup."
+                                }
+                                div { class: "theme-swatch-bar flex items-center gap-1.5 p-2 rounded-lg bg-[#09090b] border border-[#27272a]",
+                                    div { class: "w-4 h-4 rounded bg-[#09090b] border border-[#3f3f46]", title: "Latar Belakang" }
+                                    div { class: "w-4 h-4 rounded bg-[#18181c] border border-[#3f3f46]", title: "Permukaan Panel" }
+                                    div { class: "w-4 h-4 rounded bg-[#27272a]", title: "Border Tipis" }
+                                    div { class: "w-4 h-4 rounded bg-[#fafafa]", title: "Teks Utama" }
+                                    span { class: "text-[11px] text-[#71717a] ml-auto font-mono", "#09090B" }
+                                }
+                            }
+
+                            // Kartu Clean Light
+                            div {
+                                class: if current_theme == ThemeMode::Light { "theme-card active cursor-pointer" } else { "theme-card cursor-pointer" },
+                                onclick: move |_| on_change_theme.call(ThemeMode::Light),
+                                div { class: "theme-card-header flex items-center justify-between mb-3",
+                                    div { class: "flex items-center gap-2",
+                                        div { class: "w-7 h-7 rounded-lg bg-[#f4f4f7] border border-[#e4e4e9] flex items-center justify-center text-[#09090b]",
+                                            IconSun { size: "14" }
+                                        }
+                                        span { class: "text-sm font-bold text-[var(--text-primary)]", "Clean Light" }
+                                    }
+                                    if current_theme == ThemeMode::Light {
+                                        span { class: "px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-[var(--text-primary)] text-[var(--bg-app)]", "Aktif" }
+                                    }
+                                }
+                                p { class: "text-xs text-[var(--text-secondary)] leading-relaxed mb-4",
+                                    "Gaya terang bersih dengan kontras tipografi tajam, pencahayaan alami, dan kesan jernih profesional."
+                                }
+                                div { class: "theme-swatch-bar flex items-center gap-1.5 p-2 rounded-lg bg-[#fcfcfd] border border-[#e4e4e9]",
+                                    div { class: "w-4 h-4 rounded bg-[#fcfcfd] border border-[#cbd5e1]", title: "Latar Belakang" }
+                                    div { class: "w-4 h-4 rounded bg-[#ffffff] border border-[#cbd5e1]", title: "Permukaan Panel" }
+                                    div { class: "w-4 h-4 rounded bg-[#e4e4e9]", title: "Border Tipis" }
+                                    div { class: "w-4 h-4 rounded bg-[#09090b]", title: "Teks Utama" }
+                                    span { class: "text-[11px] text-[#64748b] ml-auto font-mono", "#FCFCFD" }
+                                }
+                            }
+                        }
+
+                        div { class: "mt-4 p-3.5 rounded-xl border border-dashed border-[var(--border-subtle)] bg-[var(--bg-surface-subtle)] flex items-center gap-3 text-xs text-[var(--text-muted)]",
+                            IconSparkles { size: "16" }
+                            span { "Dukungan tema tambahan sedang dipersiapkan untuk pembaruan berikutnya." }
+                        }
+                    }
+                },
+
+                // 4. CADANGAN & PEMULIHAN DATA (BACKUP & RESTORE)
                 ManageTab::BackupRestore => {
                     let total_trx = transactions.len();
                     let total_wallets = wallets.len();

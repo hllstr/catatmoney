@@ -161,7 +161,8 @@ body {
   gap: 0.6rem;
 }
 
-.theme-toggle-btn {
+.theme-toggle-btn,
+.profile-btn {
   background: var(--bg-surface);
   border: 1px solid var(--border-subtle);
   color: var(--text-primary);
@@ -176,7 +177,8 @@ body {
   transition: all 0.15s ease;
 }
 
-.theme-toggle-btn:hover {
+.theme-toggle-btn:hover,
+.profile-btn:hover {
   background: var(--bg-hover);
   border-color: var(--border-hover);
 }
@@ -1761,6 +1763,26 @@ body {
   flex-shrink: 0;
 }
 
+/* Theme Picker Cards */
+.theme-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: 12px;
+  padding: 1.15rem;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.theme-card:hover {
+  background: var(--bg-hover);
+  border-color: var(--border-hover);
+  transform: translateY(-1px);
+}
+
+.theme-card.active {
+  border-color: var(--text-primary);
+  box-shadow: 0 0 0 1px var(--text-primary), 0 4px 12px rgba(0, 0, 0, 0.06);
+}
+
 .btn-icon-subtle {
   background: transparent;
   border: none;
@@ -1810,7 +1832,8 @@ body {
     display: none;
   }
 
-  .theme-toggle-btn {
+  .theme-toggle-btn,
+  .profile-btn {
     padding: 0.4rem 0.75rem;
     font-size: 0.75rem;
   }
@@ -2036,6 +2059,10 @@ body {
     grid-template-columns: 1fr 1fr;
     gap: 0.35rem;
     padding: 0.35rem;
+  }
+
+  .manage-subtabs-bar > button:last-child {
+    grid-column: span 2;
   }
 
   .manage-tab-btn {

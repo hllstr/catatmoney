@@ -10,9 +10,10 @@ use components::dashboard::MainDashboard;
 use components::detail_modal::DetailModal;
 use components::form_modal::TransactionModal;
 use components::history::TransactionHistory;
-use components::icons::{IconMoon, IconSun, IconWallet};
+use components::icons::{IconUser, IconWallet};
 use components::management::ManagementView;
 use components::onboarding::OnboardingWizard;
+use components::profile_modal::ProfileModal;
 use components::wallet_modal::WalletModal;
 use model::{
     format_idr, get_default_categories, load_categories, load_profile, load_theme,
@@ -93,6 +94,9 @@ pub fn App() -> Element {
 
     // State modal tambah sumber dana
     let mut is_wallet_modal_open = use_signal(|| false);
+
+    // State modal ubah nama profil pengguna
+    let mut is_profile_modal_open = use_signal(|| false);
 
     // State transaksi yang sedang diedit (jika mode edit aktif)
     let mut editing_trx = use_signal(|| None::<Transaction>);
@@ -199,6 +203,8 @@ pub fn App() -> Element {
                 if evt.key() == Key::Escape {
                     if pending_delete.read().is_some() {
                         pending_delete.set(None);
+                    } else if *is_profile_modal_open.read() {
+                        is_profile_modal_open.set(false);
                     } else if *is_wallet_modal_open.read() {
                         is_wallet_modal_open.set(false);
                     } else if *is_modal_open.read() {
@@ -245,18 +251,13 @@ pub fn App() -> Element {
                         }
 
                         div { class: "header-controls",
-                            // Tombol Toggle Tema (Light Mode / Dark Mode)
+                            // Tombol Profil Pengguna (Membuka Modal Ubah Nama)
                             button {
                                 r#type: "button",
-                                class: "theme-toggle-btn",
-                                onclick: move |_| toggle_theme(),
-                                if *theme.read() == ThemeMode::Dark {
-                                    IconSun { size: "14" }
-                                    span { "Light Mode" }
-                                } else {
-                                    IconMoon { size: "14" }
-                                    span { "Dark Mode" }
-                                }
+                                class: "profile-btn",
+                                onclick: move |_| is_profile_modal_open.set(true),
+                                IconUser { size: "14" }
+                                span { "Profil" }
                             }
                         }
                     }
@@ -298,6 +299,11 @@ pub fn App() -> Element {
                                     transactions: transactions.read().clone(),
                                     wallets: wallets.read().clone(),
                                     categories: categories.read().clone(),
+                                    current_theme: *theme.read(),
+                                    on_change_theme: move |new_theme: ThemeMode| {
+                                        theme.set(new_theme);
+                                        save_theme(new_theme);
+                                    },
                                     on_update_wallets: move |new_w_list: Vec<Wallet>| {
                                         save_wallets(&new_w_list);
                                         wallets.set(new_w_list);
@@ -379,6 +385,25 @@ pub fn App() -> Element {
                     is_open: *is_wallet_modal_open.read(),
                     on_close: move |_| is_wallet_modal_open.set(false),
                     on_save: handle_save_wallet,
+                }
+
+                // Modal Popup Ubah Nama Profil Pengguna
+                if *is_profile_modal_open.read() {
+                    ProfileModal {
+                        is_open: true,
+                        current_profile: profile.read().clone(),
+                        on_close: move |_| is_profile_modal_open.set(false),
+                        on_save: move |new_name: String| {
+                            let mut current = profile.read().clone().unwrap_or(UserProfile {
+                                name: new_name.clone(),
+                                is_onboarded: true,
+                            });
+                            current.name = new_name;
+                            save_profile(&current);
+                            profile.set(Some(current));
+                            is_profile_modal_open.set(false);
+                        },
+                    }
                 }
 
                 // Modal Popup Khusus untuk Rincian Transaksi
