@@ -492,6 +492,45 @@ pub fn IconActivity(#[props(default = "18")] size: &'static str) -> Element {
     }
 }
 
+#[component]
+pub fn IconTarget(#[props(default = "18")] size: &'static str) -> Element {
+    rsx! {
+        svg {
+            width: "{size}",
+            height: "{size}",
+            view_box: "0 0 24 24",
+            fill: "none",
+            stroke: "currentColor",
+            stroke_width: "1.75",
+            stroke_linecap: "round",
+            stroke_linejoin: "round",
+            circle { cx: "12", cy: "12", r: "10" }
+            circle { cx: "12", cy: "12", r: "6" }
+            circle { cx: "12", cy: "12", r: "2" }
+        }
+    }
+}
+
+#[component]
+pub fn IconAlertCircle(#[props(default = "16")] size: &'static str) -> Element {
+    rsx! {
+        svg {
+            width: "{size}",
+            height: "{size}",
+            view_box: "0 0 24 24",
+            fill: "none",
+            stroke: "currentColor",
+            stroke_width: "1.75",
+            stroke_linecap: "round",
+            stroke_linejoin: "round",
+            circle { cx: "12", cy: "12", r: "10" }
+            line { x1: "12", y1: "8", x2: "12", y2: "12" }
+            line { x1: "12", y1: "16", x2: "12.01", y2: "16" }
+        }
+    }
+}
+
+
 
 #[component]
 pub fn IconGift(#[props(default = "18")] size: &'static str) -> Element {

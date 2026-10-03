@@ -14,4 +14,4 @@ pub mod confirm_modal;
 pub mod onboarding;
 pub mod profile_modal;
 pub mod analytics;
-
+pub mod budget;

@@ -112,12 +112,22 @@ pub const STORAGE_KEY_WALLETS: &str = "catatmoney_wallets_v1";
 pub const STORAGE_KEY_CATEGORIES: &str = "catatmoney_categories_v1";
 #[allow(dead_code)]
 pub const STORAGE_KEY_PROFILE: &str = "catatmoney_profile_v1";
+#[allow(dead_code)]
+pub const STORAGE_KEY_BUDGETS: &str = "catatmoney_budgets_v1";
+
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct CategoryBudget {
+    pub id: String,
+    pub category: String,
+    pub monthly_limit: f64,
+}
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct UserProfile {
     pub name: String,
     pub is_onboarded: bool,
 }
+
 
 
 /// Format nominal ke format mata uang Rupiah Indonesia (contoh: Rp 50.000)
@@ -243,6 +253,26 @@ pub fn get_start_of_this_week() -> String {
     }
 }
 
+/// Mendapatkan jumlah hari dalam bulan saat ini dan hari ke-berapa hari ini (current_day, total_days_in_month)
+pub fn get_month_days_info() -> (u32, u32) {
+    #[cfg(target_arch = "wasm32")]
+    {
+        let date = js_sys::Date::new_0();
+        let year = date.get_full_year() as u32;
+        let month = date.get_month() as i32; // 0-indexed (0 = Jan, 9 = Okt, dll.)
+        let current_day = date.get_date() as u32;
+        // Hari ke-0 dari bulan berikutnya adalah hari terakhir bulan ini
+        let last_day_date = js_sys::Date::new_with_year_month_day(year, month + 1, 0);
+        let total_days = last_day_date.get_date() as u32;
+        (current_day, total_days)
+    }
+    #[cfg(not(target_arch = "wasm32"))]
+    {
+        (3, 31)
+    }
+}
+
+
 
 /// Mendapatkan waktu saat ini dengan jam, menit, dan detik (HH:mm:ss)
 pub fn get_current_time() -> String {
@@ -316,6 +346,7 @@ pub fn reset_all_data() {
                 let _ = storage.remove_item(STORAGE_KEY_WALLETS);
                 let _ = storage.remove_item(STORAGE_KEY_CATEGORIES);
                 let _ = storage.remove_item(STORAGE_KEY_PROFILE);
+                let _ = storage.remove_item(STORAGE_KEY_BUDGETS);
             }
         }
     }
@@ -502,7 +533,62 @@ pub fn save_categories(_categories: &UserCategories) {
     }
 }
 
+pub fn get_default_budgets() -> Vec<CategoryBudget> {
+    vec![
+        CategoryBudget {
+            id: "budget_food".to_string(),
+            category: "Makanan & Minuman".to_string(),
+            monthly_limit: 2500000.0,
+        },
+        CategoryBudget {
+            id: "budget_groceries".to_string(),
+            category: "Belanja".to_string(),
+            monthly_limit: 1500000.0,
+        },
+        CategoryBudget {
+            id: "budget_transport".to_string(),
+            category: "Transportasi".to_string(),
+            monthly_limit: 800000.0,
+        },
+        CategoryBudget {
+            id: "budget_bills".to_string(),
+            category: "Tagihan".to_string(),
+            monthly_limit: 1200000.0,
+        },
+    ]
+}
+
+pub fn load_budgets() -> Vec<CategoryBudget> {
+    #[cfg(target_arch = "wasm32")]
+    {
+        if let Some(window) = web_sys::window() {
+            if let Ok(Some(storage)) = window.local_storage() {
+                if let Ok(Some(raw_json)) = storage.get_item(STORAGE_KEY_BUDGETS) {
+                    if let Ok(budgets) = serde_json::from_str::<Vec<CategoryBudget>>(&raw_json) {
+                        return budgets;
+                    }
+                }
+            }
+        }
+    }
+    get_default_budgets()
+}
+
+pub fn save_budgets(_budgets: &[CategoryBudget]) {
+    #[cfg(target_arch = "wasm32")]
+    {
+        if let Some(window) = web_sys::window() {
+            if let Ok(Some(storage)) = window.local_storage() {
+                if let Ok(raw_json) = serde_json::to_string(_budgets) {
+                    let _ = storage.set_item(STORAGE_KEY_BUDGETS, &raw_json);
+                }
+            }
+        }
+    }
+}
+
 pub fn calculate_wallet_balance(wallet: &Wallet, transactions: &[Transaction]) -> f64 {
+
     let mut bal = wallet.initial_balance;
     let wallet_name = wallet.name.trim();
 

@@ -5,6 +5,7 @@ mod model;
 
 use components::analytics::AnalyticsView;
 use components::bottom_nav::{BottomNavBar, NavTab};
+use components::budget::BudgetView;
 use components::calendar::FinancialCalendar;
 use components::confirm_modal::ConfirmModal;
 use components::dashboard::MainDashboard;
@@ -17,10 +18,10 @@ use components::onboarding::OnboardingWizard;
 use components::profile_modal::ProfileModal;
 use components::wallet_modal::WalletModal;
 use model::{
-    format_idr, get_default_categories, load_categories, load_profile, load_theme,
-    load_transactions, load_wallets, reset_all_data, save_categories, save_profile,
-    save_theme, save_transactions, save_wallets, ThemeMode, Transaction, TransactionType,
-    UserCategories, UserProfile, Wallet,
+    format_idr, get_default_budgets, get_default_categories, load_budgets, load_categories,
+    load_profile, load_theme, load_transactions, load_wallets, reset_all_data, save_budgets,
+    save_categories, save_profile, save_theme, save_transactions, save_wallets,
+    CategoryBudget, ThemeMode, Transaction, TransactionType, UserCategories, UserProfile, Wallet,
 };
 
 const APP_STYLE: &str = include_str!("../assets/style.css");
@@ -88,8 +89,12 @@ pub fn App() -> Element {
     // State kategori (disinkronkan dengan LocalStorage)
     let mut categories = use_signal(load_categories);
 
+    // State anggaran bulanan (disinkronkan dengan LocalStorage)
+    let mut budgets = use_signal(load_budgets);
+
     // State navigasi tab aktif (Dashboard, Kalender, Riwayat, Kelola)
     let mut active_tab = use_signal(|| NavTab::Dashboard);
+
 
     // State modal input transaksi (+)
     let mut is_modal_open = use_signal(|| false);
@@ -270,10 +275,12 @@ pub fn App() -> Element {
                                     user_name: profile.read().as_ref().map(|p| p.name.clone()).unwrap_or_else(|| "Pengguna".to_string()),
                                     transactions: transactions.read().clone(),
                                     wallets: wallets.read().clone(),
+                                    budgets: budgets.read().clone(),
                                     on_go_to_history: move |_| active_tab.set(NavTab::History),
                                     on_select_trx: move |trx| selected_detail_trx.set(Some(trx)),
                                     on_open_add_wallet: move |_| is_wallet_modal_open.set(true),
                                     on_go_to_analytics: move |_| active_tab.set(NavTab::Analytics),
+                                    on_go_to_budget: move |_| active_tab.set(NavTab::Budget),
                                 }
                             },
                             NavTab::Analytics => rsx! {
@@ -281,6 +288,17 @@ pub fn App() -> Element {
                                     transactions: transactions.read().clone(),
                                     wallets: wallets.read().clone(),
                                     on_select_trx: move |trx| selected_detail_trx.set(Some(trx)),
+                                }
+                            },
+                            NavTab::Budget => rsx! {
+                                BudgetView {
+                                    transactions: transactions.read().clone(),
+                                    categories: categories.read().clone(),
+                                    budgets: budgets.read().clone(),
+                                    on_update_budgets: move |new_budgets: Vec<CategoryBudget>| {
+                                        save_budgets(&new_budgets);
+                                        budgets.set(new_budgets);
+                                    },
                                 }
                             },
                             NavTab::Calendar => rsx! {
@@ -497,7 +515,9 @@ pub fn App() -> Element {
                                 transactions.set(vec![]);
                                 wallets.set(vec![]);
                                 categories.set(get_default_categories());
+                                budgets.set(get_default_budgets());
                                 pending_delete.set(None);
+
                             },
                             on_cancel: move |_| pending_delete.set(None),
                         }

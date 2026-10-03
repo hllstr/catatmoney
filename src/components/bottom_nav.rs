@@ -1,12 +1,14 @@
 use dioxus::prelude::*;
 use crate::components::icons::{
     IconCalendar, IconLayoutDashboard, IconList, IconPieChart, IconPlus, IconSliders,
+    IconTarget,
 };
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum NavTab {
     Dashboard,
     Analytics,
+    Budget,
     Calendar,
     History,
     Management,
@@ -43,15 +45,15 @@ pub fn BottomNavBar(
                     span { class: "dock-label", "Analitik" }
                 }
 
-                // Tab Kalender Keuangan
+                // Tab Anggaran & Batas Belanja Bulanan
                 button {
                     r#type: "button",
-                    title: "Kalender Keuangan",
-                    aria_label: "Kalender Keuangan",
-                    class: if active_tab == NavTab::Calendar { "dock-item active" } else { "dock-item" },
-                    onclick: move |_| on_select_tab.call(NavTab::Calendar),
-                    IconCalendar { size: "18" }
-                    span { class: "dock-label", "Kalender" }
+                    title: "Anggaran & Batas Belanja",
+                    aria_label: "Anggaran & Batas Belanja",
+                    class: if active_tab == NavTab::Budget { "dock-item active" } else { "dock-item" },
+                    onclick: move |_| on_select_tab.call(NavTab::Budget),
+                    IconTarget { size: "18" }
+                    span { class: "dock-label", "Anggaran" }
                 }
 
                 // Tombol Aksi Tambah Transaksi Utama (+) di Tengah
@@ -66,8 +68,20 @@ pub fn BottomNavBar(
                     }
                 }
 
+                // Tab Kalender Keuangan
+                button {
+                    r#type: "button",
+                    title: "Kalender Keuangan",
+                    aria_label: "Kalender Keuangan",
+                    class: if active_tab == NavTab::Calendar { "dock-item active" } else { "dock-item" },
+                    onclick: move |_| on_select_tab.call(NavTab::Calendar),
+                    IconCalendar { size: "18" }
+                    span { class: "dock-label", "Kalender" }
+                }
+
                 // Tab Riwayat Transaksi
                 button {
+
                     r#type: "button",
                     title: "Riwayat Transaksi",
                     aria_label: "Riwayat Transaksi",

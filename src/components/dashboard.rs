@@ -1,10 +1,14 @@
 use dioxus::prelude::*;
 use crate::components::chart::CashflowChart;
 use crate::components::icons::{
-    CategoryIcon, IconArrowLeftRight, IconArrowRight, IconPieChart, IconPlus, IconReceipt, IconWallet, WalletIcon,
+    CategoryIcon, IconArrowLeftRight, IconArrowRight, IconPieChart, IconPlus, IconReceipt,
+    IconTarget, IconWallet, WalletIcon,
 };
 use crate::components::summary::Summary;
-use crate::model::{calculate_wallet_balance, format_idr, Transaction, TransactionType, Wallet};
+use crate::model::{
+    calculate_wallet_balance, format_idr, get_month_days_info, get_today_date,
+    CategoryBudget, Transaction, TransactionType, Wallet,
+};
 use std::collections::HashMap;
 
 #[component]
@@ -12,10 +16,12 @@ pub fn MainDashboard(
     user_name: String,
     transactions: Vec<Transaction>,
     wallets: Vec<Wallet>,
+    budgets: Vec<CategoryBudget>,
     on_go_to_history: EventHandler<()>,
     on_select_trx: EventHandler<Transaction>,
     on_open_add_wallet: EventHandler<()>,
     on_go_to_analytics: EventHandler<()>,
+    on_go_to_budget: EventHandler<()>,
 ) -> Element {
     // Hitung ringkasan
     let (total_income, total_expense) = transactions.iter().fold((0.0, 0.0), |acc, t| {
@@ -37,6 +43,37 @@ pub fn MainDashboard(
     }
     let mut sorted_expenses: Vec<(String, f64)> = category_expense.into_iter().collect();
     sorted_expenses.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap_or(std::cmp::Ordering::Equal));
+
+    // Perhitungan Anggaran Bulan Berjalan
+    let today = get_today_date();
+    let current_month_prefix = if today.len() >= 7 { &today[0..7] } else { "2026-10" };
+    let (current_day, total_days_in_month) = get_month_days_info();
+    let remaining_days = total_days_in_month.saturating_sub(current_day) + 1;
+
+    let mut month_category_spent: HashMap<String, f64> = HashMap::new();
+    for t in &transactions {
+        if t.transaction_type == TransactionType::Expense && t.date.starts_with(current_month_prefix) {
+            *month_category_spent.entry(t.category.clone()).or_insert(0.0) += t.amount;
+        }
+    }
+
+    let total_budget_limit: f64 = budgets.iter().map(|b| b.monthly_limit).sum();
+    let total_budget_spent: f64 = budgets
+        .iter()
+        .map(|b| month_category_spent.get(&b.category).cloned().unwrap_or(0.0))
+        .sum();
+    let total_budget_remaining = total_budget_limit - total_budget_spent;
+    let budget_usage_pct = if total_budget_limit > 0.0 {
+        (total_budget_spent / total_budget_limit * 100.0).clamp(0.0, 999.0)
+    } else {
+        0.0
+    };
+    let daily_safe_spend = if total_budget_remaining > 0.0 {
+        total_budget_remaining / remaining_days as f64
+    } else {
+        0.0
+    };
+
 
     let recent_transactions: Vec<Transaction> = transactions.iter().take(4).cloned().collect();
 
@@ -159,7 +196,78 @@ pub fn MainDashboard(
                 }
             }
 
-            // 3. Aktivitas Transaksi Terkini
+            // 4. Panel Ringkasan Anggaran & Batas Belanja Bulanan
+            if !budgets.is_empty() {
+                div { class: "surface-panel mt-6 p-4 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-card)]",
+                    div { class: "panel-header flex items-center justify-between mb-3",
+                        div { class: "flex items-center gap-2",
+                            span { class: "w-7 h-7 rounded-lg bg-[var(--bg-surface-elevated)] border border-[var(--border-subtle)] flex items-center justify-center text-[var(--text-primary)]",
+                                IconTarget { size: "15" }
+                            }
+                            div {
+                                h3 { class: "text-sm font-bold text-[var(--text-primary)]", "Status Anggaran Bulan Ini" }
+                                p { class: "text-[11px] text-[var(--text-muted)]",
+                                    "Pagu harian aman: {format_idr(daily_safe_spend)}/hari ({remaining_days} hari tersisa)"
+                                }
+                            }
+                        }
+                        button {
+                            r#type: "button",
+                            class: "btn-link text-xs flex items-center gap-1",
+                            onclick: move |_| on_go_to_budget.call(()),
+                            "Kelola Anggaran"
+                            IconArrowRight { size: "12" }
+                        }
+                    }
+
+                    // Progress Bar Utama
+                    div { class: "space-y-1.5 my-2",
+                        div { class: "flex items-center justify-between text-xs",
+                            span { class: "text-[var(--text-secondary)]",
+                                "Terpakai: "
+                                strong { class: "text-[var(--text-primary)] tabular-numbers", "{format_idr(total_budget_spent)}" }
+                                " dari {format_idr(total_budget_limit)}"
+                            }
+                            span { class: "font-semibold tabular-numbers text-[var(--text-primary)]",
+                                "{budget_usage_pct:.0}%"
+                            }
+                        }
+                        div { class: "w-full bg-[var(--bg-surface-subtle)] rounded-full h-2 overflow-hidden",
+                            div {
+                                class: if budget_usage_pct >= 100.0 { "bg-[var(--negative)] h-full rounded-full transition-all" } else if budget_usage_pct >= 75.0 { "bg-[var(--amber-500)] h-full rounded-full transition-all" } else { "bg-[var(--positive)] h-full rounded-full transition-all" },
+                                style: "width: {budget_usage_pct.min(100.0)}%;",
+                            }
+                        }
+                    }
+
+                    // Mini Progress per Kategori (maksimal 3 kategori teratas)
+                    div { class: "grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-3 mt-2 border-t border-[var(--border-subtle)]",
+                        for b in budgets.iter().take(3) {
+                            {
+                                let b_spent = month_category_spent.get(&b.category).cloned().unwrap_or(0.0);
+                                let b_pct = if b.monthly_limit > 0.0 { (b_spent / b.monthly_limit * 100.0).clamp(0.0, 100.0) } else { 0.0 };
+                                rsx! {
+                                    div { class: "p-2 rounded-lg bg-[var(--bg-surface-subtle)] text-[11px]",
+                                        key: "{b.id}",
+                                        div { class: "flex items-center justify-between mb-1",
+                                            span { class: "font-semibold text-[var(--text-primary)] truncate max-w-[120px]", "{b.category}" }
+                                            span { class: "tabular-numbers text-[var(--text-muted)]", "{b_pct:.0}%" }
+                                        }
+                                        div { class: "w-full bg-[var(--bg-app)] rounded-full h-1 overflow-hidden",
+                                            div {
+                                                class: if b_pct >= 100.0 { "bg-[var(--negative)] h-full rounded-full" } else if b_pct >= 75.0 { "bg-[var(--amber-500)] h-full rounded-full" } else { "bg-[var(--positive)] h-full rounded-full" },
+                                                style: "width: {b_pct}%;",
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            // 5. Aktivitas Transaksi Terkini
             div { class: "surface-panel mt-6",
                 div { class: "panel-header",
                     h3 { class: "panel-title",
