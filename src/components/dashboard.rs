@@ -1,7 +1,7 @@
 use dioxus::prelude::*;
 use crate::components::chart::CashflowChart;
 use crate::components::icons::{
-    CategoryIcon, IconArrowRight, IconPieChart, IconPlus, IconReceipt, IconWallet, WalletIcon,
+    CategoryIcon, IconArrowLeftRight, IconArrowRight, IconPieChart, IconPlus, IconReceipt, IconWallet, WalletIcon,
 };
 use crate::components::summary::Summary;
 use crate::model::{calculate_wallet_balance, format_idr, Transaction, TransactionType, Wallet};
@@ -21,6 +21,7 @@ pub fn MainDashboard(
         match t.transaction_type {
             TransactionType::Income => (acc.0 + t.amount, acc.1),
             TransactionType::Expense => (acc.0, acc.1 + t.amount),
+            TransactionType::Transfer => (acc.0, acc.1 + t.admin_fee.unwrap_or(0.0)),
         }
     });
     // Total saldo bersih dihitung dari seluruh pos saldo sumber dana yang aktif
@@ -179,21 +180,22 @@ pub fn MainDashboard(
                     div { class: "transaction-feed",
                         for trx in recent_transactions {
                             {
-                                let is_income = trx.transaction_type == TransactionType::Income;
-                                let amount_str = if is_income {
-                                    format!("+{}", format_idr(trx.amount))
-                                } else {
-                                    format!("-{}", format_idr(trx.amount))
-                                };
-                                let amount_class = if is_income {
-                                    "row-amount tabular-numbers positive"
-                                } else {
-                                    "row-amount tabular-numbers negative"
-                                };
-                                let box_class = if is_income {
-                                    "category-icon-box income"
-                                } else {
-                                    "category-icon-box expense"
+                                let (amount_str, amount_class, box_class) = match trx.transaction_type {
+                                    TransactionType::Income => (
+                                        format!("+{}", format_idr(trx.amount)),
+                                        "row-amount tabular-numbers positive",
+                                        "category-icon-box income",
+                                    ),
+                                    TransactionType::Expense => (
+                                        format!("-{}", format_idr(trx.amount)),
+                                        "row-amount tabular-numbers negative",
+                                        "category-icon-box expense",
+                                    ),
+                                    TransactionType::Transfer => (
+                                        format_idr(trx.amount),
+                                        "row-amount tabular-numbers transfer",
+                                        "category-icon-box transfer",
+                                    ),
                                 };
 
                                 rsx! {
@@ -206,12 +208,24 @@ pub fn MainDashboard(
                                         },
                                         div { class: "row-left",
                                             div { class: "{box_class}",
-                                                CategoryIcon { category: trx.category.clone() }
+                                                if trx.transaction_type == TransactionType::Transfer {
+                                                    IconArrowLeftRight { size: "16" }
+                                                } else {
+                                                    CategoryIcon { category: trx.category.clone() }
+                                                }
                                             }
                                             div { class: "row-details",
                                                 span { class: "row-title", "{trx.title}" }
                                                 div { class: "row-meta",
-                                                    span { class: "meta-category", "{trx.category}" }
+                                                    if trx.transaction_type == TransactionType::Transfer {
+                                                        if let Some(ref dest) = trx.to_wallet {
+                                                            span { class: "transfer-route-badge", "{trx.wallet} → {dest}" }
+                                                        } else {
+                                                            span { class: "meta-category", "{trx.category}" }
+                                                        }
+                                                    } else {
+                                                        span { class: "meta-category", "{trx.category}" }
+                                                    }
                                                     span { "•" }
                                                     span { "{trx.date}" }
                                                     span { "•" }
@@ -221,7 +235,14 @@ pub fn MainDashboard(
                                         }
 
                                         div { class: "row-right",
-                                            span { class: "{amount_class}", "{amount_str}" }
+                                            if trx.transaction_type == TransactionType::Transfer {
+                                                span { class: "flex items-center gap-1 {amount_class}",
+                                                    IconArrowLeftRight { size: "12" }
+                                                    "{amount_str}"
+                                                }
+                                            } else {
+                                                span { class: "{amount_class}", "{amount_str}" }
+                                            }
                                         }
                                     }
                                 }

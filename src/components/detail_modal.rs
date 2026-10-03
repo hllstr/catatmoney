@@ -1,7 +1,7 @@
 use dioxus::prelude::*;
 use crate::components::icons::{
-    CategoryIcon, IconArrowDownRight, IconArrowUpRight, IconCalendar, IconClock, IconEdit, IconEye,
-    IconFileText, IconPaperclip, IconTrash, IconWallet, IconX,
+    CategoryIcon, IconArrowDownRight, IconArrowLeftRight, IconArrowUpRight, IconCalendar, IconClock,
+    IconEdit, IconEye, IconFileText, IconPaperclip, IconTrash, IconWallet, IconX,
 };
 use crate::model::{format_idr, Transaction, TransactionType};
 
@@ -20,12 +20,19 @@ pub fn DetailModal(
     let mut show_full_preview = use_signal(|| true);
 
     let is_income = trx.transaction_type == TransactionType::Income;
+    let is_transfer = trx.transaction_type == TransactionType::Transfer;
     let trx_for_delete = trx.clone();
     let trx_to_edit = trx.clone();
     let amount_str = if is_income {
         format!("+{}", format_idr(trx.amount))
+    } else if is_transfer {
+        format_idr(trx.amount)
     } else {
         format!("-{}", format_idr(trx.amount))
+    };
+    let admin_fee_label = match trx.admin_fee {
+        Some(fee) if fee > 0.0 => format_idr(fee),
+        _ => "Rp 0 (Gratis)".to_string(),
     };
 
     rsx! {
@@ -51,13 +58,28 @@ pub fn DetailModal(
 
                 // Hero Banner Rincian Transaksi
                 div {
-                    class: if is_income { "detail-hero-box income-theme" } else { "detail-hero-box expense-theme" },
+                    class: if is_income {
+                        "detail-hero-box income-theme"
+                    } else if is_transfer {
+                        "detail-hero-box transfer-theme"
+                    } else {
+                        "detail-hero-box expense-theme"
+                    },
                     div { class: "flex items-center justify-between",
                         div {
-                            class: if is_income { "detail-type-badge positive" } else { "detail-type-badge negative" },
+                            class: if is_income {
+                                "detail-type-badge positive"
+                            } else if is_transfer {
+                                "detail-type-badge transfer"
+                            } else {
+                                "detail-type-badge negative"
+                            },
                             if is_income {
                                 IconArrowUpRight { size: "14" }
                                 span { "Pemasukan" }
+                            } else if is_transfer {
+                                IconArrowLeftRight { size: "14" }
+                                span { "Transfer Antar Akun" }
                             } else {
                                 IconArrowDownRight { size: "14" }
                                 span { "Pengeluaran" }
@@ -66,32 +88,59 @@ pub fn DetailModal(
                     }
                     div { class: "mt-2.5",
                         h3 {
-                            class: if is_income { "detail-amount-display income tabular-numbers" } else { "detail-amount-display expense tabular-numbers" },
+                            class: if is_income {
+                                "detail-amount-display income tabular-numbers"
+                            } else if is_transfer {
+                                "detail-amount-display transfer tabular-numbers"
+                            } else {
+                                "detail-amount-display expense tabular-numbers"
+                            },
                             "{amount_str}"
                         }
                         p { class: "detail-title-display", "{trx.title}" }
                     }
                 }
 
-                // Grid Metadata Transaksi (Simetris 2x2)
+                // Grid Metadata Transaksi
                 div { class: "detail-grid",
                     // 1. Kategori
                     div { class: "detail-grid-item",
                         span { class: "detail-item-label", "Kategori" }
                         div { class: "flex items-center gap-2 mt-1",
                             div { class: "w-6 h-6 rounded-md bg-[var(--bg-card)] border border-[var(--border-subtle)] flex items-center justify-center shrink-0",
-                                CategoryIcon { category: trx.category.clone() }
+                                if is_transfer {
+                                    IconArrowLeftRight { size: "14" }
+                                } else {
+                                    CategoryIcon { category: trx.category.clone() }
+                                }
                             }
                             span { class: "font-semibold text-sm truncate", "{trx.category}" }
                         }
                     }
 
-                    // 2. Sumber Dana
+                    // 2. Sumber Dana / Akun Asal
                     div { class: "detail-grid-item",
-                        span { class: "detail-item-label", "Sumber Dana" }
+                        span { class: "detail-item-label", if is_transfer { "Akun Asal" } else { "Sumber Dana" } }
                         div { class: "flex items-center gap-1.5 mt-1 font-semibold text-sm",
                             IconWallet { size: "14" }
                             span { class: "truncate", "{trx.wallet}" }
+                        }
+                    }
+
+                    // Tambahan untuk Transfer Antar Akun
+                    if is_transfer {
+                        div { class: "detail-grid-item",
+                            span { class: "detail-item-label", "Akun Tujuan" }
+                            div { class: "flex items-center gap-1.5 mt-1 font-semibold text-sm",
+                                IconWallet { size: "14" }
+                                span { class: "truncate", "{trx.to_wallet.as_deref().unwrap_or(\"-\")}" }
+                            }
+                        }
+                        div { class: "detail-grid-item",
+                            span { class: "detail-item-label", "Biaya Admin" }
+                            div { class: "flex items-center gap-1.5 mt-1 font-semibold text-sm tabular-numbers",
+                                span { "{admin_fee_label}" }
+                            }
                         }
                     }
 

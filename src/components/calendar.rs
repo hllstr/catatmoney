@@ -1,6 +1,6 @@
 use dioxus::prelude::*;
 use crate::components::icons::{
-    CategoryIcon, IconCalendar, IconChevronLeft, IconChevronRight, IconPaperclip, IconTrash,
+    CategoryIcon, IconArrowLeftRight, IconCalendar, IconChevronLeft, IconChevronRight, IconPaperclip, IconTrash,
 };
 use crate::model::{format_idr, get_today_date, Transaction, TransactionType};
 
@@ -39,6 +39,7 @@ pub fn FinancialCalendar(
         match t.transaction_type {
             TransactionType::Income => (acc.0 + t.amount, acc.1),
             TransactionType::Expense => (acc.0, acc.1 + t.amount),
+            TransactionType::Transfer => (acc.0, acc.1 + t.admin_fee.unwrap_or(0.0)),
         }
     });
 
@@ -108,6 +109,7 @@ pub fn FinancialCalendar(
                         let day_items: Vec<&Transaction> = transactions.iter().filter(|t| t.date == date_str).collect();
                         let has_income = day_items.iter().any(|t| t.transaction_type == TransactionType::Income);
                         let has_expense = day_items.iter().any(|t| t.transaction_type == TransactionType::Expense);
+                        let has_transfer = day_items.iter().any(|t| t.transaction_type == TransactionType::Transfer);
 
                         let mut cell_class = "calendar-day-cell".to_string();
                         if is_selected {
@@ -126,13 +128,16 @@ pub fn FinancialCalendar(
                                 span { class: "day-number", "{day}" }
 
                                 // Indikator Titik Arus Kas
-                                if has_income || has_expense {
+                                if has_income || has_expense || has_transfer {
                                     div { class: "day-indicators",
                                         if has_income {
                                             span { class: "indicator-dot income" }
                                         }
                                         if has_expense {
                                             span { class: "indicator-dot expense" }
+                                        }
+                                        if has_transfer {
+                                            span { class: "indicator-dot transfer" }
                                         }
                                     }
                                 }
@@ -162,18 +167,25 @@ pub fn FinancialCalendar(
                         for trx in selected_trxs {
                             {
                                 let is_income = trx.transaction_type == TransactionType::Income;
+                                let is_transfer = trx.transaction_type == TransactionType::Transfer;
                                 let amount_str = if is_income {
                                     format!("+{}", format_idr(trx.amount))
+                                } else if is_transfer {
+                                    format_idr(trx.amount)
                                 } else {
                                     format!("-{}", format_idr(trx.amount))
                                 };
                                 let amount_class = if is_income {
                                     "row-amount tabular-numbers positive"
+                                } else if is_transfer {
+                                    "row-amount tabular-numbers transfer"
                                 } else {
                                     "row-amount tabular-numbers negative"
                                 };
                                 let box_class = if is_income {
                                     "category-icon-box income"
+                                } else if is_transfer {
+                                    "category-icon-box transfer"
                                 } else {
                                     "category-icon-box expense"
                                 };
@@ -188,12 +200,26 @@ pub fn FinancialCalendar(
                                         },
                                         div { class: "row-left",
                                             div { class: "{box_class}",
-                                                CategoryIcon { category: trx.category.clone() }
+                                                if is_transfer {
+                                                    IconArrowLeftRight { size: "16" }
+                                                } else {
+                                                    CategoryIcon { category: trx.category.clone() }
+                                                }
                                             }
                                             div { class: "row-details",
                                                 span { class: "row-title", "{trx.title}" }
                                                 div { class: "row-meta",
-                                                    span { class: "meta-category", "{trx.category}" }
+                                                    if is_transfer {
+                                                        if let Some(ref to) = trx.to_wallet {
+                                                            span { class: "transfer-route-badge",
+                                                                "{trx.wallet} → {to}"
+                                                            }
+                                                        } else {
+                                                            span { class: "meta-category", "{trx.category}" }
+                                                        }
+                                                    } else {
+                                                        span { class: "meta-category", "{trx.category}" }
+                                                    }
                                                     span { "•" }
                                                     span { class: "tabular-numbers", "{trx.time}" }
                                                     if let Some(ref att) = trx.attachment_name {

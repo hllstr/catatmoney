@@ -159,6 +159,26 @@ pub fn IconArrowDownRight(#[props(default = "16")] size: &'static str) -> Elemen
 }
 
 #[component]
+pub fn IconArrowLeftRight(#[props(default = "16")] size: &'static str) -> Element {
+    rsx! {
+        svg {
+            width: "{size}",
+            height: "{size}",
+            view_box: "0 0 24 24",
+            fill: "none",
+            stroke: "currentColor",
+            stroke_width: "1.75",
+            stroke_linecap: "round",
+            stroke_linejoin: "round",
+            path { d: "m16 3 4 4-4 4" }
+            path { d: "M20 7H4" }
+            path { d: "m8 21-4-4 4-4" }
+            path { d: "M4 17h16" }
+        }
+    }
+}
+
+#[component]
 pub fn IconPlus(#[props(default = "16")] size: &'static str) -> Element {
     rsx! {
         svg {

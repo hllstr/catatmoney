@@ -33,6 +33,7 @@ pub fn TransactionForm(on_add: EventHandler<Transaction>) -> Element {
     let current_categories = match *trx_type.read() {
         TransactionType::Expense => EXPENSE_CATEGORIES,
         TransactionType::Income => INCOME_CATEGORIES,
+        TransactionType::Transfer => &["Transfer Internal"],
     };
 
     let handle_submit = move |evt: FormEvent| {
@@ -72,6 +73,8 @@ pub fn TransactionForm(on_add: EventHandler<Transaction>) -> Element {
             attachment_name: None,
             attachment_size: None,
             attachment_data: None,
+            to_wallet: None,
+            admin_fee: None,
         };
 
         on_add.call(new_trx);

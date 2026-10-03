@@ -34,6 +34,10 @@
   --negative-bg: rgba(225, 29, 72, 0.08);
   --negative-border: rgba(225, 29, 72, 0.2);
   
+  --transfer: #d97706;
+  --transfer-bg: rgba(217, 119, 6, 0.08);
+  --transfer-border: rgba(217, 119, 6, 0.22);
+  
   --dock-bg: rgba(255, 255, 255, 0.88);
   --dock-border: #e4e4e9;
   --shadow-dock: 0 10px 30px -5px rgba(0, 0, 0, 0.08);
@@ -68,6 +72,10 @@ html.dark, .dark {
   --negative: #f43f5e;
   --negative-bg: rgba(244, 63, 94, 0.1);
   --negative-border: rgba(244, 63, 94, 0.22);
+  
+  --transfer: #fbbf24;
+  --transfer-bg: rgba(251, 191, 36, 0.1);
+  --transfer-border: rgba(251, 191, 36, 0.24);
   
   --dock-bg: rgba(18, 18, 22, 0.88);
   --dock-border: #27272f;
@@ -593,6 +601,10 @@ body {
   background: var(--negative);
 }
 
+.indicator-dot.transfer {
+  background: var(--transfer);
+}
+
 .selected-date-detail {
   border-top: 1px solid var(--border-subtle);
   padding-top: 1.25rem;
@@ -616,7 +628,7 @@ body {
 /* Segmented Control / Type Selector */
 .segmented-control {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(3, 1fr);
   gap: 0.25rem;
   background: var(--bg-surface-subtle);
   border: 1px solid var(--border-subtle);
@@ -656,6 +668,12 @@ body {
   background: var(--positive-bg);
   border: 1px solid var(--positive-border);
   color: var(--positive);
+}
+
+.segment-btn.active-transfer {
+  background: var(--transfer-bg);
+  border: 1px solid var(--transfer-border);
+  color: var(--transfer);
 }
 
 /* Forms */
@@ -874,6 +892,12 @@ input[type="time"]::-webkit-calendar-picker-indicator:hover {
   color: var(--negative);
 }
 
+.category-icon-box.transfer {
+  background: var(--transfer-bg);
+  border: 1px solid var(--transfer-border);
+  color: var(--transfer);
+}
+
 .row-details {
   display: flex;
   flex-direction: column;
@@ -943,6 +967,10 @@ input[type="time"]::-webkit-calendar-picker-indicator:hover {
 
 .row-amount.negative {
   color: var(--negative);
+}
+
+.row-amount.transfer {
+  color: var(--transfer);
 }
 
 .btn-icon-danger {
@@ -1265,6 +1293,54 @@ input[type="time"]::-webkit-calendar-picker-indicator:hover {
   color: var(--negative);
 }
 
+.badge-type.transfer,
+.detail-type-badge.transfer,
+.detail-hero-box.transfer-theme .detail-type-badge {
+  background: var(--transfer-bg);
+  border: 1px solid var(--transfer-border);
+  color: var(--transfer);
+}
+
+.detail-hero-box.transfer-theme {
+  border-color: var(--transfer-border);
+  background: linear-gradient(180deg, var(--transfer-bg) 0%, transparent 100%);
+}
+
+.transfer-route-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.12rem 0.5rem;
+  border-radius: 4px;
+  background: var(--transfer-bg);
+  border: 1px solid var(--transfer-border);
+  color: var(--transfer);
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.transfer-wallets-grid {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.transfer-arrow-separator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--bg-hover);
+  color: var(--text-muted);
+  border: 1px solid var(--border-subtle);
+  margin-top: 1.25rem;
+  flex-shrink: 0;
+}
+
 .detail-amount,
 .detail-amount-display {
   font-size: 2rem;
@@ -1280,6 +1356,10 @@ input[type="time"]::-webkit-calendar-picker-indicator:hover {
 
 .detail-amount-display.expense {
   color: var(--text-primary);
+}
+
+.detail-amount-display.transfer {
+  color: var(--transfer);
 }
 
 .detail-title,

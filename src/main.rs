@@ -142,6 +142,7 @@ pub fn App() -> Element {
                     cats.income.push(cat_name);
                 }
             }
+            TransactionType::Transfer => {}
         }
         save_categories(&cats);
     };

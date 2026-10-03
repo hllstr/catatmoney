@@ -4,6 +4,7 @@ use serde::{Deserialize, Serialize};
 pub enum TransactionType {
     Income,
     Expense,
+    Transfer,
 }
 
 impl TransactionType {
@@ -12,6 +13,7 @@ impl TransactionType {
         match self {
             Self::Income => "Pemasukan",
             Self::Expense => "Pengeluaran",
+            Self::Transfer => "Transfer Antar Akun",
         }
     }
 }
@@ -64,8 +66,12 @@ pub struct Transaction {
     pub category: String,
     #[serde(default = "default_wallet")]
     pub wallet: String,
+    #[serde(default)]
+    pub to_wallet: Option<String>,
+    #[serde(default)]
+    pub admin_fee: Option<f64>,
     pub date: String, // YYYY-MM-DD
-    pub time: String, // HH:mm:ss (detail hingga detik)
+    pub time: String, // HH:mm:ss
     pub notes: String,
     pub attachment_name: Option<String>,
     pub attachment_size: Option<String>,
@@ -454,11 +460,31 @@ pub fn save_categories(_categories: &UserCategories) {
 
 pub fn calculate_wallet_balance(wallet: &Wallet, transactions: &[Transaction]) -> f64 {
     let mut bal = wallet.initial_balance;
+    let wallet_name = wallet.name.trim();
+
     for t in transactions {
-        if t.wallet.trim().eq_ignore_ascii_case(&wallet.name.trim()) {
-            match t.transaction_type {
-                TransactionType::Income => bal += t.amount,
-                TransactionType::Expense => bal -= t.amount,
+        match t.transaction_type {
+            TransactionType::Income => {
+                if t.wallet.trim().eq_ignore_ascii_case(wallet_name) {
+                    bal += t.amount;
+                }
+            }
+            TransactionType::Expense => {
+                if t.wallet.trim().eq_ignore_ascii_case(wallet_name) {
+                    bal -= t.amount;
+                }
+            }
+            TransactionType::Transfer => {
+                // Akun Asal: berkurang sebesar nominal transfer + biaya admin (jika ada)
+                if t.wallet.trim().eq_ignore_ascii_case(wallet_name) {
+                    bal -= t.amount + t.admin_fee.unwrap_or(0.0);
+                }
+                // Akun Tujuan: bertambah sebesar nominal transfer
+                if let Some(ref dest) = t.to_wallet {
+                    if dest.trim().eq_ignore_ascii_case(wallet_name) {
+                        bal += t.amount;
+                    }
+                }
             }
         }
     }
@@ -476,6 +502,8 @@ fn get_starter_transactions() -> Vec<Transaction> {
             transaction_type: TransactionType::Income,
             category: "Gaji".to_string(),
             wallet: "BCA".to_string(),
+            to_wallet: None,
+            admin_fee: None,
             date: "2026-10-01".to_string(),
             time: "09:15:20".to_string(),
             notes: "Transfer gaji awal bulan via BCA".to_string(),
@@ -490,6 +518,8 @@ fn get_starter_transactions() -> Vec<Transaction> {
             transaction_type: TransactionType::Expense,
             category: "Belanja".to_string(),
             wallet: "BCA".to_string(),
+            to_wallet: None,
+            admin_fee: None,
             date: "2026-10-01".to_string(),
             time: "17:42:08".to_string(),
             notes: "Bahan pangan mingguan dan perlengkapan rumah".to_string(),
@@ -504,6 +534,8 @@ fn get_starter_transactions() -> Vec<Transaction> {
             transaction_type: TransactionType::Expense,
             category: "Makanan & Minuman".to_string(),
             wallet: "GoPay".to_string(),
+            to_wallet: None,
+            admin_fee: None,
             date: "2026-10-02".to_string(),
             time: "12:28:44".to_string(),
             notes: "Makan siang dengan tim kantor".to_string(),
@@ -518,11 +550,29 @@ fn get_starter_transactions() -> Vec<Transaction> {
             transaction_type: TransactionType::Income,
             category: "Freelance".to_string(),
             wallet: "BCA".to_string(),
+            to_wallet: None,
+            admin_fee: None,
             date: "2026-10-02".to_string(),
             time: "15:10:30".to_string(),
             notes: "Pelunasan milestone web redesign".to_string(),
             attachment_name: Some("invoice_inv_042.pdf".to_string()),
             attachment_size: Some("88 KB".to_string()),
+            attachment_data: None,
+        },
+        Transaction {
+            id: "trx_init_5".to_string(),
+            title: "Top Up GoPay dari BCA".to_string(),
+            amount: 250000.0,
+            transaction_type: TransactionType::Transfer,
+            category: "Transfer Internal".to_string(),
+            wallet: "BCA".to_string(),
+            to_wallet: Some("GoPay".to_string()),
+            admin_fee: Some(1000.0),
+            date: "2026-10-02".to_string(),
+            time: "18:20:15".to_string(),
+            notes: "Isi saldo e-wallet untuk transportasi & makan".to_string(),
+            attachment_name: None,
+            attachment_size: None,
             attachment_data: None,
         },
     ]

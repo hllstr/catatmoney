@@ -19,6 +19,13 @@ pub fn CashflowChart(transactions: Vec<Transaction>) -> Element {
         match trx.transaction_type {
             TransactionType::Income => entry.0 += trx.amount,
             TransactionType::Expense => entry.1 += trx.amount,
+            TransactionType::Transfer => {
+                if let Some(fee) = trx.admin_fee {
+                    if fee > 0.0 {
+                        entry.1 += fee;
+                    }
+                }
+            }
         }
     }
 

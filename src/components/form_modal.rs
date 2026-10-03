@@ -1,7 +1,7 @@
 use dioxus::prelude::*;
 use crate::components::icons::{
-    IconArrowDownRight, IconArrowUpRight, IconCalendar, IconClock, IconPaperclip, IconPlus,
-    IconWallet, IconX,
+    IconArrowDownRight, IconArrowLeftRight, IconArrowRight, IconArrowUpRight, IconCalendar,
+    IconClock, IconPaperclip, IconPlus, IconWallet, IconX,
 };
 use crate::model::{
     format_number_dots, generate_id, get_current_time_hm, get_today_date, parse_input_idr,
@@ -54,6 +54,7 @@ pub fn TransactionModal(
     let current_cat_list = match *trx_type.read() {
         TransactionType::Expense => categories.expense.clone(),
         TransactionType::Income => categories.income.clone(),
+        TransactionType::Transfer => vec!["Transfer Internal".to_string()],
     };
     let default_cat = current_cat_list.first().cloned().unwrap_or_else(|| "Lainnya".to_string());
     let mut category = use_signal(|| {
@@ -68,7 +69,36 @@ pub fn TransactionModal(
         editing_transaction
             .as_ref()
             .map(|t| t.wallet.clone())
-            .unwrap_or(default_wallet_name)
+            .unwrap_or(default_wallet_name.clone())
+    });
+
+    let default_to_wallet = wallets
+        .iter()
+        .find(|w| w.name != default_wallet_name)
+        .map(|w| w.name.clone())
+        .or_else(|| wallets.first().map(|w| w.name.clone()))
+        .unwrap_or_else(|| "GoPay".to_string());
+
+    let mut to_wallet = use_signal(|| {
+        editing_transaction
+            .as_ref()
+            .and_then(|t| t.to_wallet.clone())
+            .unwrap_or(default_to_wallet)
+    });
+
+    let mut admin_fee_str = use_signal(|| {
+        editing_transaction
+            .as_ref()
+            .and_then(|t| t.admin_fee)
+            .filter(|&f| f > 0.0)
+            .map(|f| format_number_dots(f.round() as u64))
+            .unwrap_or_default()
+    });
+    let mut admin_fee_raw = use_signal(|| {
+        editing_transaction
+            .as_ref()
+            .and_then(|t| t.admin_fee)
+            .unwrap_or(0.0)
     });
 
     let mut show_new_category_input = use_signal(|| false);
@@ -130,6 +160,15 @@ pub fn TransactionModal(
             return;
         }
 
+        let current_type = *trx_type.read();
+        let from_w = wallet.read().trim().to_string();
+        let dest_w = to_wallet.read().trim().to_string();
+
+        if current_type == TransactionType::Transfer && from_w == dest_w {
+            error_msg.set(Some("Akun asal dan akun tujuan tidak boleh sama.".to_string()));
+            return;
+        }
+
         let d = date.read().trim().to_string();
         if d.is_empty() {
             error_msg.set(Some("Tanggal transaksi wajib ditentukan.".to_string()));
@@ -139,15 +178,36 @@ pub fn TransactionModal(
         let tm = time.read().trim().to_string();
         let time_val = if tm.is_empty() { get_current_time_hm() } else { tm };
 
+        let cat_val = if current_type == TransactionType::Transfer {
+            "Transfer Internal".to_string()
+        } else {
+            category.read().clone()
+        };
+
+        let target_to_wallet = if current_type == TransactionType::Transfer {
+            Some(dest_w)
+        } else {
+            None
+        };
+
+        let target_admin_fee = if current_type == TransactionType::Transfer {
+            let fee = *admin_fee_raw.read();
+            if fee > 0.0 { Some(fee) } else { None }
+        } else {
+            None
+        };
+
         let target_id = edit_id.clone().unwrap_or_else(generate_id);
 
         let saved_trx = Transaction {
             id: target_id,
             title: t,
             amount: a,
-            transaction_type: *trx_type.read(),
-            category: category.read().clone(),
-            wallet: wallet.read().clone(),
+            transaction_type: current_type,
+            category: cat_val,
+            wallet: from_w,
+            to_wallet: target_to_wallet,
+            admin_fee: target_admin_fee,
             date: d,
             time: time_val,
             notes: notes.read().trim().to_string(),
@@ -212,6 +272,16 @@ pub fn TransactionModal(
                         IconArrowUpRight { size: "14" }
                         "Pemasukan"
                     }
+                    button {
+                        r#type: "button",
+                        class: if *trx_type.read() == TransactionType::Transfer { "segment-btn active-transfer" } else { "segment-btn" },
+                        onclick: move |_| {
+                            trx_type.set(TransactionType::Transfer);
+                            category.set("Transfer Internal".to_string());
+                        },
+                        IconArrowLeftRight { size: "14" }
+                        "Transfer"
+                    }
                 }
 
                 if let Some(err) = error_msg.read().as_ref() {
@@ -227,7 +297,11 @@ pub fn TransactionModal(
                         input {
                             class: "field-input",
                             r#type: "text",
-                            placeholder: if *trx_type.read() == TransactionType::Expense { "Contoh: Belanja Bulanan, Paket Internet" } else { "Contoh: Gaji, Project Freelance" },
+                            placeholder: match *trx_type.read() {
+                                TransactionType::Expense => "Contoh: Belanja Bulanan, Paket Internet",
+                                TransactionType::Income => "Contoh: Gaji, Project Freelance",
+                                TransactionType::Transfer => "Contoh: Top Up GoPay, Tarik Tunai BCA",
+                            },
                             value: "{title}",
                             oninput: move |e| title.set(e.value()),
                         }
@@ -253,82 +327,154 @@ pub fn TransactionModal(
                         }
                     }
 
-                    // Sumber Dana / Akun
-                    div { class: "field-group",
-                        div { class: "flex items-center justify-between mb-1",
-                            label { class: "field-label mb-0",
-                                span { class: "flex items-center gap-1.5",
-                                    IconWallet { size: "13" }
-                                    "Sumber Dana / Akun"
-                                }
-                            }
-                            button {
-                                r#type: "button",
-                                class: "btn-link text-xs flex items-center gap-1",
-                                onclick: move |_| on_open_add_wallet.call(()),
-                                IconPlus { size: "12" }
-                                "Akun Baru"
-                            }
-                        }
-                        select {
-                            class: "field-select",
-                            value: "{wallet}",
-                            onchange: move |e| wallet.set(e.value()),
-                            for w in wallets.iter() {
-                                option { value: "{w.name}", "{w.name} ({w.wallet_type.as_str()})" }
-                            }
-                        }
-                    }
-
-                    // Kategori
-                    div { class: "field-group",
-                        div { class: "flex items-center justify-between mb-1",
-                            label { class: "field-label mb-0", "Kategori" }
-                            button {
-                                r#type: "button",
-                                class: "btn-link text-xs flex items-center gap-1",
-                                onclick: move |_| {
-                                    let curr = *show_new_category_input.read();
-                                    show_new_category_input.set(!curr);
-                                },
-                                IconPlus { size: "12" }
-                                if *show_new_category_input.read() { "Tutup" } else { "Kategori Kustom" }
-                            }
-                        }
-
-                        if *show_new_category_input.read() {
-                            div { class: "inline-add-category-box mb-2 p-2 rounded-lg border border-[var(--border-color)] bg-[var(--bg-card)] flex items-center gap-2",
-                                input {
-                                    class: "field-input text-xs py-1.5",
-                                    r#type: "text",
-                                    placeholder: "Nama kategori kustom baru...",
-                                    value: "{new_category_name}",
-                                    oninput: move |e| new_category_name.set(e.value()),
+                    if *trx_type.read() == TransactionType::Transfer {
+                        // Transfer: Pilihan Akun Asal & Akun Tujuan
+                        div { class: "field-group",
+                            div { class: "flex items-center justify-between mb-1",
+                                label { class: "field-label mb-0",
+                                    span { class: "flex items-center gap-1.5",
+                                        IconWallet { size: "13" }
+                                        "Alur Perpindahan Saldo"
+                                    }
                                 }
                                 button {
                                     r#type: "button",
-                                    class: "btn-primary text-xs py-1.5 px-3 flex items-center gap-1 whitespace-nowrap",
-                                    onclick: move |_| {
-                                        let cat_text = new_category_name.read().trim().to_string();
-                                        if !cat_text.is_empty() {
-                                            on_add_category.call((*trx_type.read(), cat_text.clone()));
-                                            category.set(cat_text);
-                                            new_category_name.set(String::new());
-                                            show_new_category_input.set(false);
-                                        }
-                                    },
+                                    class: "btn-link text-xs flex items-center gap-1",
+                                    onclick: move |_| on_open_add_wallet.call(()),
                                     IconPlus { size: "12" }
-                                    "Tambah"
+                                    "Akun Baru"
+                                }
+                            }
+
+                            div { class: "transfer-wallets-grid",
+                                div {
+                                    label { class: "text-[11px] font-semibold text-[var(--text-muted)] mb-1 block", "Dari Akun (Asal)" }
+                                    select {
+                                        class: "field-select text-xs py-2",
+                                        value: "{wallet}",
+                                        onchange: move |e| wallet.set(e.value()),
+                                        for w in wallets.iter() {
+                                            option { value: "{w.name}", "{w.name}" }
+                                        }
+                                    }
+                                }
+                                div { class: "transfer-arrow-separator",
+                                    IconArrowRight { size: "14" }
+                                }
+                                div {
+                                    label { class: "text-[11px] font-semibold text-[var(--text-muted)] mb-1 block", "Ke Akun (Tujuan)" }
+                                    select {
+                                        class: "field-select text-xs py-2",
+                                        value: "{to_wallet}",
+                                        onchange: move |e| to_wallet.set(e.value()),
+                                        for w in wallets.iter() {
+                                            option { value: "{w.name}", "{w.name}" }
+                                        }
+                                    }
                                 }
                             }
                         }
 
-                        select {
-                            class: "field-select",
-                            value: "{category}",
-                            onchange: move |e| category.set(e.value()),
-                            for cat in current_cat_list.iter() {
-                                option { value: "{cat}", "{cat}" }
+                        // Biaya Admin Transfer (Opsional)
+                        div { class: "field-group",
+                            div { class: "flex items-center justify-between mb-1",
+                                label { class: "field-label mb-0", "Biaya Admin (Opsional)" }
+                                span { class: "text-[11px] text-[var(--text-muted)]", "Dipotong dari akun asal" }
+                            }
+                            div { class: "currency-input-box",
+                                span { class: "currency-prefix tabular-numbers", "Rp" }
+                                input {
+                                    class: "field-input currency-input tabular-numbers",
+                                    r#type: "text",
+                                    inputmode: "numeric",
+                                    placeholder: "0",
+                                    value: "{admin_fee_str}",
+                                    oninput: move |e| {
+                                        let (num, formatted) = parse_input_idr(&e.value());
+                                        admin_fee_raw.set(num);
+                                        admin_fee_str.set(formatted);
+                                    },
+                                }
+                            }
+                        }
+                    } else {
+                        // Sumber Dana / Akun
+                        div { class: "field-group",
+                            div { class: "flex items-center justify-between mb-1",
+                                label { class: "field-label mb-0",
+                                    span { class: "flex items-center gap-1.5",
+                                        IconWallet { size: "13" }
+                                        "Sumber Dana / Akun"
+                                    }
+                                }
+                                button {
+                                    r#type: "button",
+                                    class: "btn-link text-xs flex items-center gap-1",
+                                    onclick: move |_| on_open_add_wallet.call(()),
+                                    IconPlus { size: "12" }
+                                    "Akun Baru"
+                                }
+                            }
+                            select {
+                                class: "field-select",
+                                value: "{wallet}",
+                                onchange: move |e| wallet.set(e.value()),
+                                for w in wallets.iter() {
+                                    option { value: "{w.name}", "{w.name} ({w.wallet_type.as_str()})" }
+                                }
+                            }
+                        }
+
+                        // Kategori
+                        div { class: "field-group",
+                            div { class: "flex items-center justify-between mb-1",
+                                label { class: "field-label mb-0", "Kategori" }
+                                button {
+                                    r#type: "button",
+                                    class: "btn-link text-xs flex items-center gap-1",
+                                    onclick: move |_| {
+                                        let curr = *show_new_category_input.read();
+                                        show_new_category_input.set(!curr);
+                                    },
+                                    IconPlus { size: "12" }
+                                    if *show_new_category_input.read() { "Tutup" } else { "Kategori Kustom" }
+                                }
+                            }
+
+                            if *show_new_category_input.read() {
+                                div { class: "inline-add-category-box mb-2 p-2 rounded-lg border border-[var(--border-color)] bg-[var(--bg-card)] flex items-center gap-2",
+                                    input {
+                                        class: "field-input text-xs py-1.5",
+                                        r#type: "text",
+                                        placeholder: "Nama kategori kustom baru...",
+                                        value: "{new_category_name}",
+                                        oninput: move |e| new_category_name.set(e.value()),
+                                    }
+                                    button {
+                                        r#type: "button",
+                                        class: "btn-primary text-xs py-1.5 px-3 flex items-center gap-1 whitespace-nowrap",
+                                        onclick: move |_| {
+                                            let cat_text = new_category_name.read().trim().to_string();
+                                            if !cat_text.is_empty() {
+                                                on_add_category.call((*trx_type.read(), cat_text.clone()));
+                                                category.set(cat_text);
+                                                new_category_name.set(String::new());
+                                                show_new_category_input.set(false);
+                                            }
+                                        },
+                                        IconPlus { size: "12" }
+                                        "Tambah"
+                                    }
+                                }
+                            }
+
+                            select {
+                                class: "field-select",
+                                value: "{category}",
+                                onchange: move |e| category.set(e.value()),
+                                for cat in current_cat_list.iter() {
+                                    option { value: "{cat}", "{cat}" }
+                                }
                             }
                         }
                     }

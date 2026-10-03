@@ -1,12 +1,15 @@
 use dioxus::prelude::*;
-use crate::components::icons::{CategoryIcon, IconPaperclip, IconReceipt, IconTrash};
+use crate::components::icons::{
+    CategoryIcon, IconArrowLeftRight, IconPaperclip, IconReceipt, IconTrash,
+};
 use crate::model::{format_idr, format_short_date, Transaction, TransactionType};
 
 #[derive(Clone, Copy, PartialEq, Eq)]
 pub enum HistoryFilter {
     All,
-    Income,
     Expense,
+    Income,
+    Transfer,
 }
 
 #[component]
@@ -23,14 +26,16 @@ pub fn TransactionHistory(
         .filter(|t| {
             let matches_filter = match *current_filter.read() {
                 HistoryFilter::All => true,
-                HistoryFilter::Income => t.transaction_type == TransactionType::Income,
                 HistoryFilter::Expense => t.transaction_type == TransactionType::Expense,
+                HistoryFilter::Income => t.transaction_type == TransactionType::Income,
+                HistoryFilter::Transfer => t.transaction_type == TransactionType::Transfer,
             };
             let q = search_query.read().to_lowercase();
             let matches_search = q.is_empty()
                 || t.title.to_lowercase().contains(&q)
                 || t.category.to_lowercase().contains(&q)
                 || t.wallet.to_lowercase().contains(&q)
+                || t.to_wallet.as_ref().map(|tw| tw.to_lowercase().contains(&q)).unwrap_or(false)
                 || t.notes.to_lowercase().contains(&q);
 
             matches_filter && matches_search
@@ -55,15 +60,21 @@ pub fn TransactionHistory(
                     }
                     button {
                         r#type: "button",
+                        class: if *current_filter.read() == HistoryFilter::Expense { "filter-pill active" } else { "filter-pill" },
+                        onclick: move |_| current_filter.set(HistoryFilter::Expense),
+                        "Pengeluaran"
+                    }
+                    button {
+                        r#type: "button",
                         class: if *current_filter.read() == HistoryFilter::Income { "filter-pill active" } else { "filter-pill" },
                         onclick: move |_| current_filter.set(HistoryFilter::Income),
                         "Pemasukan"
                     }
                     button {
                         r#type: "button",
-                        class: if *current_filter.read() == HistoryFilter::Expense { "filter-pill active" } else { "filter-pill" },
-                        onclick: move |_| current_filter.set(HistoryFilter::Expense),
-                        "Pengeluaran"
+                        class: if *current_filter.read() == HistoryFilter::Transfer { "filter-pill active" } else { "filter-pill" },
+                        onclick: move |_| current_filter.set(HistoryFilter::Transfer),
+                        "Transfer"
                     }
                 }
             }
@@ -90,21 +101,22 @@ pub fn TransactionHistory(
                 div { class: "transaction-feed",
                     for trx in filtered_list {
                         {
-                            let is_income = trx.transaction_type == TransactionType::Income;
-                            let amount_str = if is_income {
-                                format!("+{}", format_idr(trx.amount))
-                            } else {
-                                format!("-{}", format_idr(trx.amount))
-                            };
-                            let amount_class = if is_income {
-                                "row-amount tabular-numbers positive"
-                            } else {
-                                "row-amount tabular-numbers negative"
-                            };
-                            let box_class = if is_income {
-                                "category-icon-box income"
-                            } else {
-                                "category-icon-box expense"
+                            let (amount_str, amount_class, box_class) = match trx.transaction_type {
+                                TransactionType::Income => (
+                                    format!("+{}", format_idr(trx.amount)),
+                                    "row-amount tabular-numbers positive",
+                                    "category-icon-box income",
+                                ),
+                                TransactionType::Expense => (
+                                    format!("-{}", format_idr(trx.amount)),
+                                    "row-amount tabular-numbers negative",
+                                    "category-icon-box expense",
+                                ),
+                                TransactionType::Transfer => (
+                                    format_idr(trx.amount),
+                                    "row-amount tabular-numbers transfer",
+                                    "category-icon-box transfer",
+                                ),
                             };
 
                             rsx! {
@@ -117,14 +129,26 @@ pub fn TransactionHistory(
                                     },
                                     div { class: "row-left",
                                         div { class: "{box_class}",
-                                            CategoryIcon { category: trx.category.clone() }
+                                            if trx.transaction_type == TransactionType::Transfer {
+                                                IconArrowLeftRight { size: "16" }
+                                            } else {
+                                                CategoryIcon { category: trx.category.clone() }
+                                            }
                                         }
                                         div { class: "row-details",
                                             span { class: "row-title", "{trx.title}" }
                                             div { class: "row-meta",
-                                                span { class: "meta-category", "{trx.category}" }
-                                                span { "•" }
-                                                span { class: "meta-wallet-badge", "{trx.wallet}" }
+                                                if trx.transaction_type == TransactionType::Transfer {
+                                                    if let Some(ref dest) = trx.to_wallet {
+                                                        span { class: "transfer-route-badge", "{trx.wallet} → {dest}" }
+                                                    } else {
+                                                        span { class: "meta-category", "{trx.category}" }
+                                                    }
+                                                } else {
+                                                    span { class: "meta-category", "{trx.category}" }
+                                                    span { "•" }
+                                                    span { class: "meta-wallet-badge", "{trx.wallet}" }
+                                                }
                                                 span { class: "inline sm:hidden tabular-numbers text-muted", "• {format_short_date(&trx.date)}" }
                                                 span { class: "hidden sm:inline tabular-numbers text-muted", "• {trx.date} • {trx.time}" }
                                                 if trx.attachment_name.is_some() {
@@ -140,8 +164,15 @@ pub fn TransactionHistory(
                                     }
 
                                     div { class: "row-right",
-                                        span { class: "{amount_class}",
-                                            "{amount_str}"
+                                        if trx.transaction_type == TransactionType::Transfer {
+                                            span { class: "flex items-center gap-1 {amount_class}",
+                                                IconArrowLeftRight { size: "12" }
+                                                "{amount_str}"
+                                            }
+                                        } else {
+                                            span { class: "{amount_class}",
+                                                "{amount_str}"
+                                            }
                                         }
                                         button {
                                             r#type: "button",
