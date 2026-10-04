@@ -83,6 +83,45 @@ html.dark, .dark {
   --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.2);
 }
 
+/* Tokyo Night Theme (Authentic Folke tokyonight.nvim) */
+html.tokyo-night, .tokyo-night {
+  --bg-app: #16161e;
+  --bg-surface: #1a1b26;
+  --bg-surface-subtle: #1f2335;
+  --bg-input: #1b1e2d;
+  --bg-hover: #292e42;
+  
+  --border-subtle: #292e42;
+  --border-hover: #3b4261;
+  --border-focus: #7aa2f7;
+  --border-color: var(--border-subtle);
+  --bg-card: var(--bg-surface);
+  
+  --text-primary: #c0caf5;
+  --text-secondary: #a9b1d6;
+  --text-muted: #565f89;
+  
+  --accent: #7aa2f7;
+  --accent-contrast: #16161e;
+  
+  --positive: #73daca;
+  --positive-bg: rgba(115, 218, 202, 0.1);
+  --positive-border: rgba(115, 218, 202, 0.25);
+  
+  --negative: #f7768e;
+  --negative-bg: rgba(247, 118, 142, 0.1);
+  --negative-border: rgba(247, 118, 142, 0.25);
+  
+  --transfer: #e0af68;
+  --transfer-bg: rgba(224, 175, 104, 0.1);
+  --transfer-border: rgba(224, 175, 104, 0.25);
+  
+  --dock-bg: rgba(26, 27, 38, 0.92);
+  --dock-border: #292e42;
+  --shadow-dock: 0 10px 30px -5px rgba(0, 0, 0, 0.5);
+  --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.25);
+}
+
 *, *::before, *::after {
   box-sizing: border-box;
   margin: 0;

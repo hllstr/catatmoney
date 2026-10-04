@@ -82,6 +82,7 @@ pub struct Transaction {
 pub enum ThemeMode {
     Dark,
     Light,
+    TokyoNight,
 }
 
 pub const EXPENSE_CATEGORIES: &[&str] = &[
@@ -535,8 +536,10 @@ pub fn load_theme() -> ThemeMode {
         if let Some(window) = web_sys::window() {
             if let Ok(Some(storage)) = window.local_storage() {
                 if let Ok(Some(val)) = storage.get_item(THEME_KEY) {
-                    if val == "light" {
-                        return ThemeMode::Light;
+                    match val.as_str() {
+                        "light" => return ThemeMode::Light,
+                        "tokyo-night" => return ThemeMode::TokyoNight,
+                        _ => return ThemeMode::Dark,
                     }
                 }
             }
@@ -554,6 +557,7 @@ pub fn save_theme(_theme: ThemeMode) {
                 let val = match _theme {
                     ThemeMode::Dark => "dark",
                     ThemeMode::Light => "light",
+                    ThemeMode::TokyoNight => "tokyo-night",
                 };
                 let _ = storage.set_item(THEME_KEY, val);
             }

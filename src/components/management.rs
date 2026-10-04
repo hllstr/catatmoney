@@ -133,10 +133,10 @@ pub fn ManagementView(
                         editing_wallet_id.set(None);
                         is_adding_cat.set(false);
                     },
-                    if current_theme == ThemeMode::Dark {
-                        IconMoon { size: "15" }
-                    } else {
-                        IconSun { size: "15" }
+                    match current_theme {
+                        ThemeMode::Dark => rsx! { IconMoon { size: "15" } },
+                        ThemeMode::Light => rsx! { IconSun { size: "15" } },
+                        ThemeMode::TokyoNight => rsx! { IconSparkles { size: "15" } },
                     }
                     span { class: "tab-label-full", "Tema & Tampilan" }
                     span { class: "tab-label-short", "Tema Tampilan" }
@@ -626,7 +626,7 @@ pub fn ManagementView(
                             }
                         }
 
-                        div { class: "theme-picker-grid grid grid-cols-1 sm:grid-cols-2 gap-4",
+                        div { class: "theme-picker-grid grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4",
                             // Kartu Obsidian Dark
                             div {
                                 class: if current_theme == ThemeMode::Dark { "theme-card active cursor-pointer" } else { "theme-card cursor-pointer" },
@@ -678,6 +678,34 @@ pub fn ManagementView(
                                     div { class: "w-4 h-4 rounded bg-[#e4e4e9]", title: "Border Tipis" }
                                     div { class: "w-4 h-4 rounded bg-[#09090b]", title: "Teks Utama" }
                                     span { class: "text-[11px] text-[#64748b] ml-auto font-mono", "#FCFCFD" }
+                                }
+                            }
+
+                            // Kartu Tokyo Night
+                            div {
+                                class: if current_theme == ThemeMode::TokyoNight { "theme-card active cursor-pointer" } else { "theme-card cursor-pointer" },
+                                onclick: move |_| on_change_theme.call(ThemeMode::TokyoNight),
+                                div { class: "theme-card-header flex items-center justify-between mb-3",
+                                    div { class: "flex items-center gap-2",
+                                        div { class: "w-7 h-7 rounded-lg bg-[#1f2335] border border-[#292e42] flex items-center justify-center text-[#7aa2f7]",
+                                            IconSparkles { size: "14" }
+                                        }
+                                        span { class: "text-sm font-bold text-[var(--text-primary)]", "Tokyo Night" }
+                                    }
+                                    if current_theme == ThemeMode::TokyoNight {
+                                        span { class: "px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-[var(--text-primary)] text-[var(--bg-app)]", "Aktif" }
+                                    }
+                                }
+                                p { class: "text-xs text-[var(--text-secondary)] leading-relaxed mb-4",
+                                    "Palet resmi Neovim bernuansa malam Tokyo dengan latar biru pekat, aksen elektrik, dan kontras sejuk di mata."
+                                }
+                                div { class: "theme-swatch-bar flex items-center gap-1.5 p-2 rounded-lg bg-[#16161e] border border-[#292e42]",
+                                    div { class: "w-4 h-4 rounded bg-[#16161e] border border-[#3b4261]", title: "Latar Belakang" }
+                                    div { class: "w-4 h-4 rounded bg-[#1a1b26] border border-[#3b4261]", title: "Permukaan Panel" }
+                                    div { class: "w-4 h-4 rounded bg-[#292e42]", title: "Border Tipis" }
+                                    div { class: "w-4 h-4 rounded bg-[#7aa2f7]", title: "Aksen Biru Tokyo" }
+                                    div { class: "w-4 h-4 rounded bg-[#c0caf5]", title: "Teks Utama" }
+                                    span { class: "text-[11px] text-[#565f89] ml-auto font-mono", "#16161E" }
                                 }
                             }
                         }

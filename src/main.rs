@@ -48,7 +48,7 @@ pub fn App() -> Element {
     // State preferensi tema (Light / Dark Mode Monokromatik)
     let mut theme = use_signal(load_theme);
 
-    // Sinkronisasi kelas 'dark' / 'light' pada elemen root HTML browser secara reaktif
+    // Sinkronisasi kelas 'dark' / 'light' / 'tokyo-night' pada elemen root HTML browser secara reaktif
     use_effect(move || {
         let _current_mode = *theme.read();
         #[cfg(target_arch = "wasm32")]
@@ -57,14 +57,19 @@ pub fn App() -> Element {
                 if let Some(doc) = window.document() {
                     if let Some(html) = doc.document_element() {
                         let class_list = html.class_list();
+                        let _ = class_list.remove_1("dark");
+                        let _ = class_list.remove_1("light");
+                        let _ = class_list.remove_1("tokyo-night");
                         match _current_mode {
                             ThemeMode::Dark => {
                                 let _ = class_list.add_1("dark");
-                                let _ = class_list.remove_1("light");
                             }
                             ThemeMode::Light => {
                                 let _ = class_list.add_1("light");
-                                let _ = class_list.remove_1("dark");
+                            }
+                            ThemeMode::TokyoNight => {
+                                let _ = class_list.add_1("dark");
+                                let _ = class_list.add_1("tokyo-night");
                             }
                         }
                     }
@@ -165,11 +170,12 @@ pub fn App() -> Element {
         save_categories(&cats);
     };
 
-    // Handler toggle tema Light / Dark
+    // Handler toggle tema Light / Dark / Tokyo Night
     let mut toggle_theme = move || {
         let next_theme = match *theme.read() {
             ThemeMode::Dark => ThemeMode::Light,
-            ThemeMode::Light => ThemeMode::Dark,
+            ThemeMode::Light => ThemeMode::TokyoNight,
+            ThemeMode::TokyoNight => ThemeMode::Dark,
         };
         theme.set(next_theme);
         save_theme(next_theme);
@@ -178,6 +184,13 @@ pub fn App() -> Element {
     let theme_class = match *theme.read() {
         ThemeMode::Dark => "dark",
         ThemeMode::Light => "light",
+        ThemeMode::TokyoNight => "dark tokyo-night",
+    };
+
+    let theme_color_meta = match *theme.read() {
+        ThemeMode::Dark => "#09090b",
+        ThemeMode::Light => "#fcfcfd",
+        ThemeMode::TokyoNight => "#16161e",
     };
 
     let is_onboarded = profile.read().as_ref().map(|p| p.is_onboarded).unwrap_or(false);
@@ -185,7 +198,7 @@ pub fn App() -> Element {
     rsx! {
         document::Title { "CatatMoney - Financial Cashflow & Expense Intelligence" }
         document::Meta { name: "description", content: "Aplikasi pencatatan keuangan pribadi minimalis, elegan, dan offline-first." }
-        document::Meta { name: "theme-color", content: "#09090b" }
+        document::Meta { name: "theme-color", content: "{theme_color_meta}" }
         document::Meta { name: "mobile-web-app-capable", content: "yes" }
         document::Meta { name: "apple-mobile-web-app-capable", content: "yes" }
         document::Meta { name: "apple-mobile-web-app-status-bar-style", content: "black-translucent" }
