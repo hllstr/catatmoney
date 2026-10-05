@@ -1218,6 +1218,89 @@ input[type="time"]::-webkit-calendar-picker-indicator:hover {
   justify-content: space-between;
 }
 
+/* Grouped History Feed & Date Headers */
+.history-grouped-feed {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.history-day-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.history-day-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.5rem 0.25rem 0.4rem;
+  border-bottom: 1px solid var(--border-subtle);
+  margin-bottom: 0.15rem;
+}
+
+.history-day-title-box {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  color: var(--text-secondary);
+}
+
+.history-day-relative-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.1rem 0.45rem;
+  border-radius: 9999px;
+  background: var(--bg-surface-subtle);
+  border: 1px solid var(--border-subtle);
+  font-size: 0.6875rem;
+  font-weight: 700;
+  color: var(--accent);
+  letter-spacing: 0.02em;
+}
+
+.history-day-date {
+  font-weight: 700;
+  color: var(--text-primary);
+  font-size: 0.775rem;
+}
+
+.history-day-count {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+}
+
+.history-day-subtotal {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.725rem;
+  font-weight: 700;
+}
+
+.day-subtotal-income {
+  color: var(--positive);
+  background: var(--positive-bg);
+  border: 1px solid var(--positive-border);
+  padding: 0.15rem 0.4rem;
+  border-radius: 6px;
+}
+
+.day-subtotal-expense {
+  color: var(--negative);
+  background: var(--negative-bg);
+  border: 1px solid var(--negative-border);
+  padding: 0.15rem 0.4rem;
+  border-radius: 6px;
+}
+
+.day-subtotal-neutral {
+  color: var(--text-muted);
+  font-size: 0.7rem;
+  font-weight: 500;
+}
+
 /* Transaction List Feed */
 .transaction-feed {
   display: flex;

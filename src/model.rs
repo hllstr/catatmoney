@@ -626,12 +626,53 @@ pub fn format_idr_privacy(amount: f64, is_private: bool) -> String {
 pub const SAMPLE_RECEIPT_DATA_URI: &str = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHZpZXdCb3g9JzAgMCAzMjAgMjIwJyB3aWR0aD0nMzIwJyBoZWlnaHQ9JzIyMCc+PHJlY3Qgd2lkdGg9JzMyMCcgaGVpZ2h0PScyMjAnIHJ4PScxMCcgZmlsbD0nIzEyMTQxYycgc3Ryb2tlPScjMjcyNzJmJyBzdHJva2Utd2lkdGg9JzEuNScvPjx0ZXh0IHg9JzIwJyB5PSczMicgZmlsbD0nI2ZhZmFmYScgZm9udC1mYW1pbHk9J3NhbnMtc2VyaWYnIGZvbnQtc2l6ZT0nMTMnIGZvbnQtd2VpZ2h0PSc3MDAnPkdSQU5EIExVQ0tZIFNVUEVSU1RPUkU8L3RleHQ+PHRleHQgeD0nMjAnIHk9JzUwJyBmaWxsPScjNzE3MTdhJyBmb250LWZhbWlseT0nc2Fucy1zZXJpZicgZm9udC1zaXplPScxMCc+U1RSVUsgUkVTTUkgIzg4MjkxIOKAoiAwMSBPS1QgMjAyNiAxNzo0MjwvdGV4dD48bGluZSB4MT0nMjAnIHkxPSc2NCcgeDI9JzMwMCcgeTI9JzY0JyBzdHJva2U9JyMyNzI3MmYnIHN0cm9rZS1kYXNoYXJyYXk9JzQgMycvPjx0ZXh0IHg9JzIwJyB5PSc4OCcgZmlsbD0nI2ExYTFhYScgZm9udC1mYW1pbHk9J3NhbnMtc2VyaWYnIGZvbnQtc2l6ZT0nMTEnPkJhaGFuIFBhbmdhbiBTZWdhcjwvdGV4dD48dGV4dCB4PSczMDAnIHk9Jzg4JyB0ZXh0LWFuY2hvcj0nZW5kJyBmaWxsPScjZmFmYWZhJyBmb250LWZhbWlseT0nc2Fucy1zZXJpZicgZm9udC1zaXplPScxMSc+UnAgMjkwLjAwMDwvdGV4dD48dGV4dCB4PScyMCcgeT0nMTEwJyBmaWxsPScjYTFhMWFhJyBmb250LWZhbWlseT0nc2Fucy1zZXJpZicgZm9udC1zaXplPScxMSc+UGVybGVuZ2thcGFuIERhcHVyPC90ZXh0Pjx0ZXh0IHg9JzMwMCcgeT0nMTEwJyB0ZXh0LWFuY2hvcj0nZW5kJyBmaWxsPScjZmFmYWZhJyBmb250LWZhbWlseT0nc2Fucy1zZXJpZicgZm9udC1zaXplPScxMSc+UnAgMTg1LjAwMDwvdGV4dD48bGluZSB4MT0nMjAnIHkxPScxMzAnIHgyPSczMDAnIHkyPScxMzAnIHN0cm9rZT0nIzI3MjcyZicvPjx0ZXh0IHg9JzIwJyB5PScxNTUnIGZpbGw9JyNmYWZhZmEnIGZvbnQtZmFtaWx5PSdzYW5zLXNlcmlmJyBmb250LXNpemU9JzEyJyBmb250LXdlaWdodD0nNzAwJz5UT1RBTCBCQVlBUjwvdGV4dD48dGV4dCB4PSczMDAnIHk9JzE1NScgdGV4dC1hbmNob3I9J2VuZCcgZmlsbD0nIzEwYjk4MScgZm9udC1mYW1pbHk9J3NhbnMtc2VyaWYnIGZvbnQtc2l6ZT0nMTMnIGZvbnQtd2VpZ2h0PSc4MDAnPlJwIDQ3NS4wMDA8L3RleHQ+PHRleHQgeD0nMjAnIHk9JzE4NScgZmlsbD0nIzcxNzE3YScgZm9udC1mYW1pbHk9J3NhbnMtc2VyaWYnIGZvbnQtc2l6ZT0nMTAnPktBUlRVIERFQklUIEJDQSDigKkgT1RPUklTQVNJICMwOTkyNDE8L3RleHQ+PHRleHQgeD0nMjAnIHk9JzIwMCcgZmlsbD0nIzA1OTY2OScgZm9udC1mYW1pbHk9J3NhbnMtc2VyaWYnIGZvbnQtc2l6ZT0nMTAnIGZvbnQtd2VpZ2h0PSc2MDAnPlNUQVRVUzogTFVOQVMgJmFtcDsgVEVSVkVSSUZJS0FTSTwvdGV4dD48L3N2Zz4=";
 
 /// Format tanggal ringkas (contoh: 2026-10-02 -> 02/10)
+#[allow(dead_code)]
 pub fn format_short_date(date_str: &str) -> String {
     let parts: Vec<&str> = date_str.split('-').collect();
     if parts.len() == 3 {
         format!("{}/{}", parts[2], parts[1])
     } else {
         date_str.to_string()
+    }
+}
+
+/// Format tanggal lengkap Bahasa Indonesia (contoh: 2026-10-05 -> 05 Okt 2026)
+pub fn format_full_date_id(date_str: &str) -> String {
+    let parts: Vec<&str> = date_str.split('-').collect();
+    if parts.len() == 3 {
+        let month_idx = parts[1].parse::<usize>().unwrap_or(0);
+        let month_name = match month_idx {
+            1 => "Jan",
+            2 => "Feb",
+            3 => "Mar",
+            4 => "Apr",
+            5 => "Mei",
+            6 => "Jun",
+            7 => "Jul",
+            8 => "Agu",
+            9 => "Sep",
+            10 => "Okt",
+            11 => "Nov",
+            12 => "Des",
+            _ => parts[1],
+        };
+        format!("{} {} {}", parts[2], month_name, parts[0])
+    } else {
+        date_str.to_string()
+    }
+}
+
+/// Mendapatkan label relatif dan format tanggal (contoh: Some("Hari Ini"), "05 Okt 2026")
+pub fn get_relative_date_label(date_str: &str) -> (Option<&'static str>, String) {
+    let today = get_today_date();
+    let yesterday = get_date_days_ago(1);
+    let full = format_full_date_id(date_str);
+    if date_str == today {
+        (Some("Hari Ini"), full)
+    } else if date_str == yesterday {
+        (Some("Kemarin"), full)
+    } else {
+        (None, full)
     }
 }
 
