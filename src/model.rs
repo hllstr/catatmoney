@@ -84,6 +84,7 @@ pub enum ThemeMode {
     Light,
     TokyoNight,
     RosePine,
+    SakuraBlossom,
 }
 
 pub const EXPENSE_CATEGORIES: &[&str] = &[
@@ -541,6 +542,7 @@ pub fn load_theme() -> ThemeMode {
                         "light" => return ThemeMode::Light,
                         "tokyo-night" => return ThemeMode::TokyoNight,
                         "rose-pine" => return ThemeMode::RosePine,
+                        "sakura-blossom" => return ThemeMode::SakuraBlossom,
                         _ => return ThemeMode::Dark,
                     }
                 }
@@ -561,6 +563,7 @@ pub fn save_theme(_theme: ThemeMode) {
                     ThemeMode::Light => "light",
                     ThemeMode::TokyoNight => "tokyo-night",
                     ThemeMode::RosePine => "rose-pine",
+                    ThemeMode::SakuraBlossom => "sakura-blossom",
                 };
                 let _ = storage.set_item(THEME_KEY, val);
             }

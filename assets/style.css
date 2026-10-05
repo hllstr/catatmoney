@@ -161,6 +161,45 @@ html.rose-pine, .rose-pine {
   --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.25);
 }
 
+/* Sakura Blossom Theme (Soft Pastel Japanese Aesthetic) */
+html.sakura-blossom, .sakura-blossom {
+  --bg-app: #fff5f7;
+  --bg-surface: #ffffff;
+  --bg-surface-subtle: #fdf0f3;
+  --bg-input: #fff0f4;
+  --bg-hover: #fae6eb;
+  
+  --border-subtle: #f3d6dd;
+  --border-hover: #e8b7c3;
+  --border-focus: #e06c88;
+  --border-color: var(--border-subtle);
+  --bg-card: var(--bg-surface);
+  
+  --text-primary: #3b2832;
+  --text-secondary: #735665;
+  --text-muted: #9c7d8c;
+  
+  --accent: #e06c88;
+  --accent-contrast: #ffffff;
+  
+  --positive: #0d9488;
+  --positive-bg: rgba(13, 148, 136, 0.08);
+  --positive-border: rgba(13, 148, 136, 0.2);
+  
+  --negative: #e11d48;
+  --negative-bg: rgba(225, 29, 72, 0.08);
+  --negative-border: rgba(225, 29, 72, 0.2);
+  
+  --transfer: #d97706;
+  --transfer-bg: rgba(217, 119, 6, 0.08);
+  --transfer-border: rgba(217, 119, 6, 0.2);
+  
+  --dock-bg: rgba(255, 255, 255, 0.92);
+  --dock-border: #f3d6dd;
+  --shadow-dock: 0 10px 30px -5px rgba(224, 108, 136, 0.12);
+  --shadow-card: 0 1px 3px rgba(224, 108, 136, 0.06);
+}
+
 *, *::before, *::after {
   box-sizing: border-box;
   margin: 0;

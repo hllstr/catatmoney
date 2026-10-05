@@ -135,7 +135,7 @@ pub fn ManagementView(
                     },
                     match current_theme {
                         ThemeMode::Dark => rsx! { IconMoon { size: "15" } },
-                        ThemeMode::Light => rsx! { IconSun { size: "15" } },
+                        ThemeMode::Light | ThemeMode::SakuraBlossom => rsx! { IconSun { size: "15" } },
                         ThemeMode::TokyoNight | ThemeMode::RosePine => rsx! { IconSparkles { size: "15" } },
                     }
                     span { class: "tab-label-full", "Tema & Tampilan" }
@@ -734,6 +734,34 @@ pub fn ManagementView(
                                     div { class: "w-4 h-4 rounded bg-[#ebbcba]", title: "Aksen Dusty Rose" }
                                     div { class: "w-4 h-4 rounded bg-[#e0def4]", title: "Teks Utama" }
                                     span { class: "text-[11px] text-[#908caa] ml-auto font-mono", "#191724" }
+                                }
+                            }
+
+                            // Kartu Sakura Blossom
+                            div {
+                                class: if current_theme == ThemeMode::SakuraBlossom { "theme-card active cursor-pointer" } else { "theme-card cursor-pointer" },
+                                onclick: move |_| on_change_theme.call(ThemeMode::SakuraBlossom),
+                                div { class: "theme-card-header flex items-center justify-between mb-3",
+                                    div { class: "flex items-center gap-2",
+                                        div { class: "w-7 h-7 rounded-lg bg-[#fdf0f3] border border-[#f3d6dd] flex items-center justify-center text-[#e06c88]",
+                                            IconSun { size: "14" }
+                                        }
+                                        span { class: "text-sm font-bold text-[var(--text-primary)]", "Sakura Blossom" }
+                                    }
+                                    if current_theme == ThemeMode::SakuraBlossom {
+                                        span { class: "px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-[var(--text-primary)] text-[var(--bg-app)]", "Aktif" }
+                                    }
+                                }
+                                p { class: "text-xs text-[var(--text-secondary)] leading-relaxed mb-4",
+                                    "Gaya terang lembut bernuansa kelopak sakura dengan latar blush hangat dan aksen pink pastel."
+                                }
+                                div { class: "theme-swatch-bar flex items-center gap-1.5 p-2 rounded-lg bg-[#fff5f7] border border-[#f3d6dd]",
+                                    div { class: "w-4 h-4 rounded bg-[#fff5f7] border border-[#e8b7c3]", title: "Latar Belakang" }
+                                    div { class: "w-4 h-4 rounded bg-[#ffffff] border border-[#e8b7c3]", title: "Permukaan Panel" }
+                                    div { class: "w-4 h-4 rounded bg-[#f3d6dd]", title: "Border Tipis" }
+                                    div { class: "w-4 h-4 rounded bg-[#e06c88]", title: "Aksen Sakura Pink" }
+                                    div { class: "w-4 h-4 rounded bg-[#3b2832]", title: "Teks Utama" }
+                                    span { class: "text-[11px] text-[#9c7d8c] ml-auto font-mono", "#FFF5F7" }
                                 }
                             }
                         }
