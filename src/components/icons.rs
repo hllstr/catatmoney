@@ -385,6 +385,23 @@ pub fn IconChevronRight(#[props(default = "16")] size: &'static str) -> Element 
 }
 
 #[component]
+pub fn IconChevronDown(#[props(default = "16")] size: &'static str) -> Element {
+    rsx! {
+        svg {
+            width: "{size}",
+            height: "{size}",
+            view_box: "0 0 24 24",
+            fill: "none",
+            stroke: "currentColor",
+            stroke_width: "2",
+            stroke_linecap: "round",
+            stroke_linejoin: "round",
+            path { d: "m6 9 6 6 6-6" }
+        }
+    }
+}
+
+#[component]
 pub fn IconReceipt(#[props(default = "18")] size: &'static str) -> Element {
     rsx! {
         svg {

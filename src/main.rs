@@ -200,23 +200,6 @@ pub fn App() -> Element {
         save_categories(&cats);
     };
 
-    // Handler toggle tema Light / Dark / Tokyo Night / Rosé Pine / Sakura Blossom / Catppuccin
-    let mut toggle_theme = move || {
-        let next_theme = match *theme.read() {
-            ThemeMode::Dark => ThemeMode::Light,
-            ThemeMode::Light => ThemeMode::TokyoNight,
-            ThemeMode::TokyoNight => ThemeMode::RosePine,
-            ThemeMode::RosePine => ThemeMode::SakuraBlossom,
-            ThemeMode::SakuraBlossom => ThemeMode::CatppuccinLatte,
-            ThemeMode::CatppuccinLatte => ThemeMode::CatppuccinFrappe,
-            ThemeMode::CatppuccinFrappe => ThemeMode::CatppuccinMacchiato,
-            ThemeMode::CatppuccinMacchiato => ThemeMode::CatppuccinMocha,
-            ThemeMode::CatppuccinMocha => ThemeMode::Dark,
-        };
-        theme.set(next_theme);
-        save_theme(next_theme);
-    };
-
     let theme_class = match *theme.read() {
         ThemeMode::Dark => "dark",
         ThemeMode::Light => "light",
@@ -296,7 +279,10 @@ pub fn App() -> Element {
             if !is_onboarded {
                 OnboardingWizard {
                     theme: *theme.read(),
-                    on_toggle_theme: move |_| toggle_theme(),
+                    on_change_theme: move |new_theme| {
+                        theme.set(new_theme);
+                        save_theme(new_theme);
+                    },
                     on_complete: move |(new_profile, first_wallet)| {
                         save_profile(&new_profile);
                         profile.set(Some(new_profile));

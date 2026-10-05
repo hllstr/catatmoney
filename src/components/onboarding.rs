@@ -2,8 +2,9 @@ use dioxus::prelude::*;
 use crate::components::icons::{
     IconAlertTriangle, IconArrowRight, IconBanknote, IconCheck, IconChevronLeft,
     IconCreditCard, IconDownload, IconLandmark, IconReceipt, IconShield,
-    IconSmartphone, IconSun, IconMoon, IconWallet,
+    IconSmartphone, IconWallet,
 };
+use crate::components::theme_dropdown::ThemeSelectorDropdown;
 use crate::model::{
     generate_id, parse_input_idr, ThemeMode, UserProfile, Wallet, WalletType,
 };
@@ -11,7 +12,7 @@ use crate::model::{
 #[component]
 pub fn OnboardingWizard(
     theme: ThemeMode,
-    on_toggle_theme: EventHandler<()>,
+    on_change_theme: EventHandler<ThemeMode>,
     on_complete: EventHandler<(UserProfile, Wallet)>,
 ) -> Element {
     let mut step = use_signal(|| 1);
@@ -56,7 +57,7 @@ pub fn OnboardingWizard(
 
     rsx! {
         div { class: "onboarding-container",
-            // Header Top Bar dengan Toggle Tema
+            // Header Top Bar dengan Pemilih Tema Popover
             div { class: "onboarding-top-bar",
                 div { class: "flex items-center gap-2",
                     div { class: "brand-icon-box",
@@ -65,17 +66,10 @@ pub fn OnboardingWizard(
                     span { class: "text-sm font-bold tracking-tight text-[var(--text-primary)]", "CatatMoney" }
                 }
 
-                button {
-                    r#type: "button",
-                    class: "theme-toggle-btn",
-                    onclick: move |_| on_toggle_theme.call(()),
-                    if theme == ThemeMode::Dark {
-                        IconSun { size: "14" }
-                        span { "Light Mode" }
-                    } else {
-                        IconMoon { size: "14" }
-                        span { "Dark Mode" }
-                    }
+                ThemeSelectorDropdown {
+                    current_theme: theme,
+                    on_change_theme: move |t| on_change_theme.call(t),
+                    align_right: true,
                 }
             }
 
