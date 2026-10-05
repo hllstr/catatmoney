@@ -6,7 +6,7 @@ use crate::components::icons::{
 };
 use crate::components::summary::Summary;
 use crate::model::{
-    calculate_wallet_balance, format_idr, get_month_days_info, get_today_date,
+    calculate_wallet_balance, format_idr, format_idr_privacy, get_month_days_info, get_today_date,
     CategoryBudget, SavingsGoal, Transaction, TransactionType, Wallet,
 };
 use std::collections::HashMap;
@@ -24,6 +24,8 @@ pub fn MainDashboard(
     on_go_to_analytics: EventHandler<()>,
     on_go_to_budget: EventHandler<()>,
     on_go_to_savings: EventHandler<()>,
+    #[props(default = false)] is_private: bool,
+    #[props(default = None)] on_toggle_privacy: Option<EventHandler<()>>,
 ) -> Element {
     // Hitung ringkasan
     let (total_income, total_expense) = transactions.iter().fold((0.0, 0.0), |acc, t| {
@@ -104,6 +106,8 @@ pub fn MainDashboard(
                 balance: total_balance,
                 income: total_income,
                 expense: total_expense,
+                is_private: is_private,
+                on_toggle_privacy: on_toggle_privacy,
             }
 
             // 2. Sumber Dana & Akun Keuangan
@@ -140,7 +144,7 @@ pub fn MainDashboard(
                                         span { class: "wallet-type-text", "{w.wallet_type.as_str()}" }
                                     }
                                     div { class: "wallet-name", "{w.name}" }
-                                    div { class: "{bal_class}", "{format_idr(current_bal)}" }
+                                    div { class: "{bal_class}", "{format_idr_privacy(current_bal, is_private)}" }
                                 }
                             }
                         }
@@ -184,13 +188,18 @@ pub fn MainDashboard(
                                     } else {
                                         0.0
                                     };
+                                    let breakdown_amount_str = if is_private {
+                                        format!("Rp •••••• ({percentage:.1}%)")
+                                    } else {
+                                        format!("{} ({percentage:.1}%)", format_idr(*amt))
+                                    };
 
                                     rsx! {
                                         div { class: "breakdown-item", key: "{cat}",
                                             div { class: "breakdown-meta",
                                                 span { class: "breakdown-name", "{cat}" }
                                                 span { class: "breakdown-amount tabular-numbers",
-                                                    "{format_idr(*amt)} ({percentage:.1}%)"
+                                                    "{breakdown_amount_str}"
                                                 }
                                             }
                                             div { class: "breakdown-bar-track",
@@ -219,7 +228,7 @@ pub fn MainDashboard(
                             div {
                                 h3 { class: "text-sm font-bold text-[var(--text-primary)]", "Status Anggaran Bulan Ini" }
                                 p { class: "text-[11px] text-[var(--text-muted)]",
-                                    "Pagu harian aman: {format_idr(daily_safe_spend)}/hari ({remaining_days} hari tersisa)"
+                                    "Pagu harian aman: {format_idr_privacy(daily_safe_spend, is_private)}/hari ({remaining_days} hari tersisa)"
                                 }
                             }
                         }
@@ -237,8 +246,8 @@ pub fn MainDashboard(
                         div { class: "flex items-center justify-between text-xs",
                             span { class: "text-[var(--text-secondary)]",
                                 "Terpakai: "
-                                strong { class: "text-[var(--text-primary)] tabular-numbers", "{format_idr(total_budget_spent)}" }
-                                " dari {format_idr(total_budget_limit)}"
+                                strong { class: "text-[var(--text-primary)] tabular-numbers", "{format_idr_privacy(total_budget_spent, is_private)}" }
+                                " dari {format_idr_privacy(total_budget_limit, is_private)}"
                             }
                             span { class: "font-semibold tabular-numbers text-[var(--text-primary)]",
                                 "{budget_usage_pct:.0}%"
@@ -308,8 +317,8 @@ pub fn MainDashboard(
                         div { class: "flex items-center justify-between text-xs",
                             span { class: "text-[var(--text-secondary)]",
                                 "Terkumpul: "
-                                strong { class: "text-[var(--text-primary)] tabular-numbers", "{format_idr(dash_total_saved)}" }
-                                " dari {format_idr(dash_total_target)}"
+                                strong { class: "text-[var(--text-primary)] tabular-numbers", "{format_idr_privacy(dash_total_saved, is_private)}" }
+                                " dari {format_idr_privacy(dash_total_target, is_private)}"
                             }
                             span { class: "font-semibold tabular-numbers text-[var(--accent)]",
                                 "{dash_savings_pct:.0}%"
@@ -387,17 +396,17 @@ pub fn MainDashboard(
                             {
                                 let (amount_str, amount_class, box_class) = match trx.transaction_type {
                                     TransactionType::Income => (
-                                        format!("+{}", format_idr(trx.amount)),
+                                        if is_private { "+Rp ••••••".to_string() } else { format!("+{}", format_idr(trx.amount)) },
                                         "row-amount tabular-numbers positive",
                                         "category-icon-box income",
                                     ),
                                     TransactionType::Expense => (
-                                        format!("-{}", format_idr(trx.amount)),
+                                        if is_private { "-Rp ••••••".to_string() } else { format!("-{}", format_idr(trx.amount)) },
                                         "row-amount tabular-numbers negative",
                                         "category-icon-box expense",
                                     ),
                                     TransactionType::Transfer => (
-                                        format_idr(trx.amount),
+                                        if is_private { "Rp ••••••".to_string() } else { format_idr(trx.amount) },
                                         "row-amount tabular-numbers transfer",
                                         "category-icon-box transfer",
                                     ),

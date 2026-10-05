@@ -3,11 +3,12 @@ use crate::components::icons::{
     CategoryIcon, IconArrowDownRight, IconArrowLeftRight, IconArrowUpRight, IconCalendar, IconClock,
     IconEdit, IconEye, IconFileText, IconPaperclip, IconTrash, IconWallet, IconX,
 };
-use crate::model::{format_idr, Transaction, TransactionType};
+use crate::model::{format_idr_privacy, Transaction, TransactionType};
 
 #[component]
 pub fn DetailModal(
     transaction: Option<Transaction>,
+    #[props(default = false)] is_private: bool,
     on_close: EventHandler<()>,
     on_edit: EventHandler<Transaction>,
     on_delete: EventHandler<Transaction>,
@@ -24,14 +25,14 @@ pub fn DetailModal(
     let trx_for_delete = trx.clone();
     let trx_to_edit = trx.clone();
     let amount_str = if is_income {
-        format!("+{}", format_idr(trx.amount))
+        format!("+{}", format_idr_privacy(trx.amount, is_private))
     } else if is_transfer {
-        format_idr(trx.amount)
+        format_idr_privacy(trx.amount, is_private)
     } else {
-        format!("-{}", format_idr(trx.amount))
+        format!("-{}", format_idr_privacy(trx.amount, is_private))
     };
     let admin_fee_label = match trx.admin_fee {
-        Some(fee) if fee > 0.0 => format_idr(fee),
+        Some(fee) if fee > 0.0 => format_idr_privacy(fee, is_private),
         _ => "Rp 0 (Gratis)".to_string(),
     };
 

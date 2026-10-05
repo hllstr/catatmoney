@@ -2,11 +2,12 @@ use dioxus::prelude::*;
 use crate::components::icons::{
     CategoryIcon, IconArrowLeftRight, IconCalendar, IconChevronLeft, IconChevronRight, IconPaperclip, IconTrash,
 };
-use crate::model::{format_idr, get_today_date, Transaction, TransactionType};
+use crate::model::{format_idr_privacy, get_today_date, Transaction, TransactionType};
 
 #[component]
 pub fn FinancialCalendar(
     transactions: Vec<Transaction>,
+    #[props(default = false)] is_private: bool,
     on_delete: EventHandler<Transaction>,
     on_select_trx: EventHandler<Transaction>,
 ) -> Element {
@@ -153,7 +154,7 @@ pub fn FinancialCalendar(
                     div {
                         h4 { class: "selected-date-title", "Catatan: {*selected_date.read()}" }
                         p { class: "selected-date-meta tabular-numbers",
-                            "Masuk: +{format_idr(day_income)} • Keluar: -{format_idr(day_expense)}"
+                            "Masuk: +{format_idr_privacy(day_income, is_private)} • Keluar: -{format_idr_privacy(day_expense, is_private)}"
                         }
                     }
                 }
@@ -169,11 +170,11 @@ pub fn FinancialCalendar(
                                 let is_income = trx.transaction_type == TransactionType::Income;
                                 let is_transfer = trx.transaction_type == TransactionType::Transfer;
                                 let amount_str = if is_income {
-                                    format!("+{}", format_idr(trx.amount))
+                                    format!("+{}", format_idr_privacy(trx.amount, is_private))
                                 } else if is_transfer {
-                                    format_idr(trx.amount)
+                                    format_idr_privacy(trx.amount, is_private)
                                 } else {
-                                    format!("-{}", format_idr(trx.amount))
+                                    format!("-{}", format_idr_privacy(trx.amount, is_private))
                                 };
                                 let amount_class = if is_income {
                                     "row-amount tabular-numbers positive"

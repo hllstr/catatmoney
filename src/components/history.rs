@@ -17,6 +17,7 @@ pub fn TransactionHistory(
     transactions: Vec<Transaction>,
     on_delete: EventHandler<Transaction>,
     on_select_trx: EventHandler<Transaction>,
+    #[props(default = false)] is_private: bool,
 ) -> Element {
     let mut current_filter = use_signal(|| HistoryFilter::All);
     let mut search_query = use_signal(String::new);
@@ -103,17 +104,17 @@ pub fn TransactionHistory(
                         {
                             let (amount_str, amount_class, box_class) = match trx.transaction_type {
                                 TransactionType::Income => (
-                                    format!("+{}", format_idr(trx.amount)),
+                                    if is_private { "+Rp ••••••".to_string() } else { format!("+{}", format_idr(trx.amount)) },
                                     "row-amount tabular-numbers positive",
                                     "category-icon-box income",
                                 ),
                                 TransactionType::Expense => (
-                                    format!("-{}", format_idr(trx.amount)),
+                                    if is_private { "-Rp ••••••".to_string() } else { format!("-{}", format_idr(trx.amount)) },
                                     "row-amount tabular-numbers negative",
                                     "category-icon-box expense",
                                 ),
                                 TransactionType::Transfer => (
-                                    format_idr(trx.amount),
+                                    if is_private { "Rp ••••••".to_string() } else { format_idr(trx.amount) },
                                     "row-amount tabular-numbers transfer",
                                     "category-icon-box transfer",
                                 ),

@@ -13,7 +13,7 @@ use components::detail_modal::DetailModal;
 use components::form_modal::TransactionModal;
 use components::history::TransactionHistory;
 use components::ai_copilot::AiCopilotView;
-use components::icons::{IconUser, IconWallet};
+use components::icons::{IconEye, IconEyeOff, IconUser, IconWallet};
 use components::management::ManagementView;
 use components::onboarding::OnboardingWizard;
 use components::profile_modal::ProfileModal;
@@ -22,9 +22,9 @@ use components::theme_dropdown::ThemeSelectorDropdown;
 use components::wallet_modal::WalletModal;
 use model::{
     format_idr, get_default_categories, load_budgets, load_categories,
-    load_gemini_api_key, load_profile, load_savings_goals, load_savings_logs, load_theme,
+    load_gemini_api_key, load_privacy_mode, load_profile, load_savings_goals, load_savings_logs, load_theme,
     load_transactions, load_wallets, reset_all_data, save_budgets, save_categories,
-    save_gemini_api_key, save_profile, save_savings_goals, save_savings_logs, save_theme,
+    save_gemini_api_key, save_privacy_mode, save_profile, save_savings_goals, save_savings_logs, save_theme,
     save_transactions, save_wallets, CategoryBudget, SavingsGoal, SavingsLogEntry,
     ThemeMode, Transaction, TransactionType, UserCategories, UserProfile, Wallet,
 };
@@ -138,6 +138,9 @@ pub fn App() -> Element {
 
     // State Google Gemini API Key (disinkronkan dengan LocalStorage)
     let mut gemini_api_key = use_signal(load_gemini_api_key);
+
+    // State mode privasi (disinkronkan dengan LocalStorage)
+    let mut is_private = use_signal(load_privacy_mode);
 
     // State navigasi tab aktif (Dashboard, Kalender, Riwayat, Kelola)
     let mut active_tab = use_signal(|| NavTab::Dashboard);
@@ -324,6 +327,26 @@ pub fn App() -> Element {
                         }
 
                         div { class: "header-controls",
+                            // Tombol Privasi Finansial (Sembunyikan / Tampilkan Nominal)
+                            button {
+                                r#type: "button",
+                                class: if *is_private.read() { "privacy-btn active" } else { "privacy-btn" },
+                                title: if *is_private.read() { "Tampilkan Saldo & Nominal" } else { "Sembunyikan Saldo (Mode Privasi)" },
+                                onclick: move |_| {
+                                    let next = !*is_private.read();
+                                    is_private.set(next);
+                                    save_privacy_mode(next);
+                                },
+                                if *is_private.read() {
+                                    IconEyeOff { size: "14" }
+                                } else {
+                                    IconEye { size: "14" }
+                                }
+                                span { class: "hidden sm:inline font-semibold text-xs",
+                                    if *is_private.read() { "Sensor" } else { "Privasi" }
+                                }
+                            }
+
                             // Pemilih Tema Popover Cepat
                             ThemeSelectorDropdown {
                                 current_theme: *theme.read(),
@@ -356,6 +379,12 @@ pub fn App() -> Element {
                                     wallets: wallets.read().clone(),
                                     budgets: budgets.read().clone(),
                                     savings_goals: savings_goals.read().clone(),
+                                    is_private: *is_private.read(),
+                                    on_toggle_privacy: move |_| {
+                                        let next = !*is_private.read();
+                                        is_private.set(next);
+                                        save_privacy_mode(next);
+                                    },
                                     on_go_to_history: move |_| active_tab.set(NavTab::History),
                                     on_select_trx: move |trx| selected_detail_trx.set(Some(trx)),
                                     on_open_add_wallet: move |_| is_wallet_modal_open.set(true),
@@ -437,6 +466,7 @@ pub fn App() -> Element {
                             NavTab::Calendar => rsx! {
                                 FinancialCalendar {
                                     transactions: transactions.read().clone(),
+                                    is_private: *is_private.read(),
                                     on_delete: move |trx: Transaction| {
                                         pending_delete.set(Some(PendingDelete::Transaction(trx)));
                                     },
@@ -446,6 +476,7 @@ pub fn App() -> Element {
                             NavTab::History => rsx! {
                                 TransactionHistory {
                                     transactions: transactions.read().clone(),
+                                    is_private: *is_private.read(),
                                     on_delete: move |trx: Transaction| {
                                         pending_delete.set(Some(PendingDelete::Transaction(trx)));
                                     },
@@ -586,6 +617,7 @@ pub fn App() -> Element {
                 // Modal Popup Khusus untuk Rincian Transaksi
                 DetailModal {
                     transaction: selected_detail_trx.read().clone(),
+                    is_private: *is_private.read(),
                     on_close: move |_| selected_detail_trx.set(None),
                     on_edit: move |trx: Transaction| {
                         selected_detail_trx.set(None);

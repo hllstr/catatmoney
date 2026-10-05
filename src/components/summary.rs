@@ -1,9 +1,15 @@
 use dioxus::prelude::*;
-use crate::components::icons::{IconArrowDownRight, IconArrowUpRight, IconWallet};
-use crate::model::format_idr;
+use crate::components::icons::{IconArrowDownRight, IconArrowUpRight, IconEye, IconEyeOff, IconWallet};
+use crate::model::{format_idr, format_idr_privacy};
 
 #[component]
-pub fn Summary(balance: f64, income: f64, expense: f64) -> Element {
+pub fn Summary(
+    balance: f64,
+    income: f64,
+    expense: f64,
+    #[props(default = false)] is_private: bool,
+    #[props(default = None)] on_toggle_privacy: Option<EventHandler<()>>,
+) -> Element {
     let balance_class = if balance >= 0.0 {
         "metric-value tabular-numbers"
     } else {
@@ -16,18 +22,45 @@ pub fn Summary(balance: f64, income: f64, expense: f64) -> Element {
         0.0
     };
 
+    let income_display = if is_private {
+        "+Rp ••••••".to_string()
+    } else {
+        format!("+{}", format_idr(income))
+    };
+
+    let expense_display = if is_private {
+        "-Rp ••••••".to_string()
+    } else {
+        format!("-{}", format_idr(expense))
+    };
+
     rsx! {
         div { class: "summary-container",
             // Kartu Total Saldo Bersih (Hero Balance)
             div { class: "metric-card hero-balance",
                 div { class: "metric-card-top",
-                    span { class: "metric-title", "Total Saldo Bersih" }
+                    div { class: "flex items-center gap-2",
+                        span { class: "metric-title", "Total Saldo Bersih" }
+                        if let Some(on_toggle) = on_toggle_privacy {
+                            button {
+                                r#type: "button",
+                                class: "summary-eye-btn",
+                                title: if is_private { "Tampilkan Nominal (Mode Privasi Aktif)" } else { "Sembunyikan Nominal (Aktifkan Mode Privasi)" },
+                                onclick: move |_| on_toggle.call(()),
+                                if is_private {
+                                    IconEyeOff { size: "14" }
+                                } else {
+                                    IconEye { size: "14" }
+                                }
+                            }
+                        }
+                    }
                     div { class: "metric-icon-indicator",
                         IconWallet { size: "16" }
                     }
                 }
                 div { class: "{balance_class}",
-                    "{format_idr(balance)}"
+                    "{format_idr_privacy(balance, is_private)}"
                 }
                 div { class: "metric-sub-badge tabular-numbers",
                     span { "Rasio Tabungan: {savings_rate:.1}%" }
@@ -43,7 +76,7 @@ pub fn Summary(balance: f64, income: f64, expense: f64) -> Element {
                     }
                 }
                 div { class: "metric-value tabular-numbers positive",
-                    "+{format_idr(income)}"
+                    "{income_display}"
                 }
                 div { class: "text-xs text-muted mt-1",
                     "Arus Kas Masuk Terverifikasi"
@@ -59,7 +92,7 @@ pub fn Summary(balance: f64, income: f64, expense: f64) -> Element {
                     }
                 }
                 div { class: "metric-value tabular-numbers negative",
-                    "-{format_idr(expense)}"
+                    "{expense_display}"
                 }
                 div { class: "text-xs text-muted mt-1",
                     "Total Belanja & Biaya Hidup"
@@ -68,3 +101,4 @@ pub fn Summary(balance: f64, income: f64, expense: f64) -> Element {
         }
     }
 }
+

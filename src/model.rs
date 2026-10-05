@@ -583,6 +583,46 @@ pub fn save_theme(_theme: ThemeMode) {
     }
 }
 
+#[allow(dead_code)]
+pub const PRIVACY_MODE_KEY: &str = "catatmoney_privacy_mode";
+
+/// Memuat preferensi mode privasi dari LocalStorage
+pub fn load_privacy_mode() -> bool {
+    #[cfg(target_arch = "wasm32")]
+    {
+        if let Some(window) = web_sys::window() {
+            if let Ok(Some(storage)) = window.local_storage() {
+                if let Ok(Some(val)) = storage.get_item(PRIVACY_MODE_KEY) {
+                    return val == "true";
+                }
+            }
+        }
+    }
+    false
+}
+
+/// Menyimpan preferensi mode privasi ke LocalStorage
+pub fn save_privacy_mode(_is_private: bool) {
+    #[cfg(target_arch = "wasm32")]
+    {
+        if let Some(window) = web_sys::window() {
+            if let Ok(Some(storage)) = window.local_storage() {
+                let val = if _is_private { "true" } else { "false" };
+                let _ = storage.set_item(PRIVACY_MODE_KEY, val);
+            }
+        }
+    }
+}
+
+/// Format nominal mata uang Rupiah dengan dukungan sensor privasi
+pub fn format_idr_privacy(amount: f64, is_private: bool) -> String {
+    if is_private {
+        "Rp ••••••".to_string()
+    } else {
+        format_idr(amount)
+    }
+}
+
 pub const SAMPLE_RECEIPT_DATA_URI: &str = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHZpZXdCb3g9JzAgMCAzMjAgMjIwJyB3aWR0aD0nMzIwJyBoZWlnaHQ9JzIyMCc+PHJlY3Qgd2lkdGg9JzMyMCcgaGVpZ2h0PScyMjAnIHJ4PScxMCcgZmlsbD0nIzEyMTQxYycgc3Ryb2tlPScjMjcyNzJmJyBzdHJva2Utd2lkdGg9JzEuNScvPjx0ZXh0IHg9JzIwJyB5PSczMicgZmlsbD0nI2ZhZmFmYScgZm9udC1mYW1pbHk9J3NhbnMtc2VyaWYnIGZvbnQtc2l6ZT0nMTMnIGZvbnQtd2VpZ2h0PSc3MDAnPkdSQU5EIExVQ0tZIFNVUEVSU1RPUkU8L3RleHQ+PHRleHQgeD0nMjAnIHk9JzUwJyBmaWxsPScjNzE3MTdhJyBmb250LWZhbWlseT0nc2Fucy1zZXJpZicgZm9udC1zaXplPScxMCc+U1RSVUsgUkVTTUkgIzg4MjkxIOKAoiAwMSBPS1QgMjAyNiAxNzo0MjwvdGV4dD48bGluZSB4MT0nMjAnIHkxPSc2NCcgeDI9JzMwMCcgeTI9JzY0JyBzdHJva2U9JyMyNzI3MmYnIHN0cm9rZS1kYXNoYXJyYXk9JzQgMycvPjx0ZXh0IHg9JzIwJyB5PSc4OCcgZmlsbD0nI2ExYTFhYScgZm9udC1mYW1pbHk9J3NhbnMtc2VyaWYnIGZvbnQtc2l6ZT0nMTEnPkJhaGFuIFBhbmdhbiBTZWdhcjwvdGV4dD48dGV4dCB4PSczMDAnIHk9Jzg4JyB0ZXh0LWFuY2hvcj0nZW5kJyBmaWxsPScjZmFmYWZhJyBmb250LWZhbWlseT0nc2Fucy1zZXJpZicgZm9udC1zaXplPScxMSc+UnAgMjkwLjAwMDwvdGV4dD48dGV4dCB4PScyMCcgeT0nMTEwJyBmaWxsPScjYTFhMWFhJyBmb250LWZhbWlseT0nc2Fucy1zZXJpZicgZm9udC1zaXplPScxMSc+UGVybGVuZ2thcGFuIERhcHVyPC90ZXh0Pjx0ZXh0IHg9JzMwMCcgeT0nMTEwJyB0ZXh0LWFuY2hvcj0nZW5kJyBmaWxsPScjZmFmYWZhJyBmb250LWZhbWlseT0nc2Fucy1zZXJpZicgZm9udC1zaXplPScxMSc+UnAgMTg1LjAwMDwvdGV4dD48bGluZSB4MT0nMjAnIHkxPScxMzAnIHgyPSczMDAnIHkyPScxMzAnIHN0cm9rZT0nIzI3MjcyZicvPjx0ZXh0IHg9JzIwJyB5PScxNTUnIGZpbGw9JyNmYWZhZmEnIGZvbnQtZmFtaWx5PSdzYW5zLXNlcmlmJyBmb250LXNpemU9JzEyJyBmb250LXdlaWdodD0nNzAwJz5UT1RBTCBCQVlBUjwvdGV4dD48dGV4dCB4PSczMDAnIHk9JzE1NScgdGV4dC1hbmNob3I9J2VuZCcgZmlsbD0nIzEwYjk4MScgZm9udC1mYW1pbHk9J3NhbnMtc2VyaWYnIGZvbnQtc2l6ZT0nMTMnIGZvbnQtd2VpZ2h0PSc4MDAnPlJwIDQ3NS4wMDA8L3RleHQ+PHRleHQgeD0nMjAnIHk9JzE4NScgZmlsbD0nIzcxNzE3YScgZm9udC1mYW1pbHk9J3NhbnMtc2VyaWYnIGZvbnQtc2l6ZT0nMTAnPktBUlRVIERFQklUIEJDQSDigKkgT1RPUklTQVNJICMwOTkyNDE8L3RleHQ+PHRleHQgeD0nMjAnIHk9JzIwMCcgZmlsbD0nIzA1OTY2OScgZm9udC1mYW1pbHk9J3NhbnMtc2VyaWYnIGZvbnQtc2l6ZT0nMTAnIGZvbnQtd2VpZ2h0PSc2MDAnPlNUQVRVUzogTFVOQVMgJmFtcDsgVEVSVkVSSUZJS0FTSTwvdGV4dD48L3N2Zz4=";
 
 /// Format tanggal ringkas (contoh: 2026-10-02 -> 02/10)
