@@ -136,7 +136,7 @@ pub fn ManagementView(
                     match current_theme {
                         ThemeMode::Dark => rsx! { IconMoon { size: "15" } },
                         ThemeMode::Light => rsx! { IconSun { size: "15" } },
-                        ThemeMode::TokyoNight => rsx! { IconSparkles { size: "15" } },
+                        ThemeMode::TokyoNight | ThemeMode::RosePine => rsx! { IconSparkles { size: "15" } },
                     }
                     span { class: "tab-label-full", "Tema & Tampilan" }
                     span { class: "tab-label-short", "Tema Tampilan" }
@@ -626,7 +626,7 @@ pub fn ManagementView(
                             }
                         }
 
-                        div { class: "theme-picker-grid grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4",
+                        div { class: "theme-picker-grid grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5",
                             // Kartu Obsidian Dark
                             div {
                                 class: if current_theme == ThemeMode::Dark { "theme-card active cursor-pointer" } else { "theme-card cursor-pointer" },
@@ -706,6 +706,34 @@ pub fn ManagementView(
                                     div { class: "w-4 h-4 rounded bg-[#7aa2f7]", title: "Aksen Biru Tokyo" }
                                     div { class: "w-4 h-4 rounded bg-[#c0caf5]", title: "Teks Utama" }
                                     span { class: "text-[11px] text-[#565f89] ml-auto font-mono", "#16161E" }
+                                }
+                            }
+
+                            // Kartu Rosé Pine
+                            div {
+                                class: if current_theme == ThemeMode::RosePine { "theme-card active cursor-pointer" } else { "theme-card cursor-pointer" },
+                                onclick: move |_| on_change_theme.call(ThemeMode::RosePine),
+                                div { class: "theme-card-header flex items-center justify-between mb-3",
+                                    div { class: "flex items-center gap-2",
+                                        div { class: "w-7 h-7 rounded-lg bg-[#26233a] border border-[#403d52] flex items-center justify-center text-[#ebbcba]",
+                                            IconSparkles { size: "14" }
+                                        }
+                                        span { class: "text-sm font-bold text-[var(--text-primary)]", "Rosé Pine" }
+                                    }
+                                    if current_theme == ThemeMode::RosePine {
+                                        span { class: "px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-[var(--text-primary)] text-[var(--bg-app)]", "Aktif" }
+                                    }
+                                }
+                                p { class: "text-xs text-[var(--text-secondary)] leading-relaxed mb-4",
+                                    "Palet vintage Soho bernuansa arang plum hangat dengan aksen dusty rose, seafoam, dan gold amber."
+                                }
+                                div { class: "theme-swatch-bar flex items-center gap-1.5 p-2 rounded-lg bg-[#191724] border border-[#26233a]",
+                                    div { class: "w-4 h-4 rounded bg-[#191724] border border-[#403d52]", title: "Latar Belakang" }
+                                    div { class: "w-4 h-4 rounded bg-[#1f1d2e] border border-[#403d52]", title: "Permukaan Panel" }
+                                    div { class: "w-4 h-4 rounded bg-[#26233a]", title: "Border Tipis" }
+                                    div { class: "w-4 h-4 rounded bg-[#ebbcba]", title: "Aksen Dusty Rose" }
+                                    div { class: "w-4 h-4 rounded bg-[#e0def4]", title: "Teks Utama" }
+                                    span { class: "text-[11px] text-[#908caa] ml-auto font-mono", "#191724" }
                                 }
                             }
                         }

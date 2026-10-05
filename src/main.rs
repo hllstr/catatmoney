@@ -60,6 +60,7 @@ pub fn App() -> Element {
                         let _ = class_list.remove_1("dark");
                         let _ = class_list.remove_1("light");
                         let _ = class_list.remove_1("tokyo-night");
+                        let _ = class_list.remove_1("rose-pine");
                         match _current_mode {
                             ThemeMode::Dark => {
                                 let _ = class_list.add_1("dark");
@@ -70,6 +71,10 @@ pub fn App() -> Element {
                             ThemeMode::TokyoNight => {
                                 let _ = class_list.add_1("dark");
                                 let _ = class_list.add_1("tokyo-night");
+                            }
+                            ThemeMode::RosePine => {
+                                let _ = class_list.add_1("dark");
+                                let _ = class_list.add_1("rose-pine");
                             }
                         }
                     }
@@ -175,7 +180,8 @@ pub fn App() -> Element {
         let next_theme = match *theme.read() {
             ThemeMode::Dark => ThemeMode::Light,
             ThemeMode::Light => ThemeMode::TokyoNight,
-            ThemeMode::TokyoNight => ThemeMode::Dark,
+            ThemeMode::TokyoNight => ThemeMode::RosePine,
+            ThemeMode::RosePine => ThemeMode::Dark,
         };
         theme.set(next_theme);
         save_theme(next_theme);
@@ -185,12 +191,14 @@ pub fn App() -> Element {
         ThemeMode::Dark => "dark",
         ThemeMode::Light => "light",
         ThemeMode::TokyoNight => "dark tokyo-night",
+        ThemeMode::RosePine => "dark rose-pine",
     };
 
     let theme_color_meta = match *theme.read() {
         ThemeMode::Dark => "#09090b",
         ThemeMode::Light => "#fcfcfd",
         ThemeMode::TokyoNight => "#16161e",
+        ThemeMode::RosePine => "#191724",
     };
 
     let is_onboarded = profile.read().as_ref().map(|p| p.is_onboarded).unwrap_or(false);

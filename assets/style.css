@@ -122,6 +122,45 @@ html.tokyo-night, .tokyo-night {
   --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.25);
 }
 
+/* Rosé Pine Theme (Official rosepinetheme.com Main) */
+html.rose-pine, .rose-pine {
+  --bg-app: #191724;
+  --bg-surface: #1f1d2e;
+  --bg-surface-subtle: #26233a;
+  --bg-input: #21202e;
+  --bg-hover: #2a273f;
+  
+  --border-subtle: #26233a;
+  --border-hover: #403d52;
+  --border-focus: #ebbcba;
+  --border-color: var(--border-subtle);
+  --bg-card: var(--bg-surface);
+  
+  --text-primary: #e0def4;
+  --text-secondary: #908caa;
+  --text-muted: #6e6a86;
+  
+  --accent: #ebbcba;
+  --accent-contrast: #191724;
+  
+  --positive: #9ccfd8;
+  --positive-bg: rgba(156, 207, 216, 0.1);
+  --positive-border: rgba(156, 207, 216, 0.25);
+  
+  --negative: #eb6f92;
+  --negative-bg: rgba(235, 111, 146, 0.1);
+  --negative-border: rgba(235, 111, 146, 0.25);
+  
+  --transfer: #f6c177;
+  --transfer-bg: rgba(246, 193, 119, 0.1);
+  --transfer-border: rgba(246, 193, 119, 0.25);
+  
+  --dock-bg: rgba(31, 29, 46, 0.92);
+  --dock-border: #26233a;
+  --shadow-dock: 0 10px 30px -5px rgba(0, 0, 0, 0.5);
+  --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.25);
+}
+
 *, *::before, *::after {
   box-sizing: border-box;
   margin: 0;
