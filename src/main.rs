@@ -18,6 +18,7 @@ use components::management::ManagementView;
 use components::onboarding::OnboardingWizard;
 use components::profile_modal::ProfileModal;
 use components::savings::SavingsView;
+use components::theme_dropdown::ThemeSelectorDropdown;
 use components::wallet_modal::WalletModal;
 use model::{
     format_idr, get_default_categories, load_budgets, load_categories,
@@ -323,6 +324,17 @@ pub fn App() -> Element {
                         }
 
                         div { class: "header-controls",
+                            // Pemilih Tema Popover Cepat
+                            ThemeSelectorDropdown {
+                                current_theme: *theme.read(),
+                                on_change_theme: move |new_theme| {
+                                    theme.set(new_theme);
+                                    save_theme(new_theme);
+                                },
+                                align_right: true,
+                                compact_mobile: true,
+                            }
+
                             // Tombol Profil Pengguna (Membuka Modal Ubah Nama)
                             button {
                                 r#type: "button",

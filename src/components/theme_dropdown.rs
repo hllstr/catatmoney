@@ -109,9 +109,16 @@ pub fn ThemeSelectorDropdown(
     current_theme: ThemeMode,
     on_change_theme: EventHandler<ThemeMode>,
     #[props(default = false)] align_right: bool,
+    #[props(default = false)] compact_mobile: bool,
 ) -> Element {
     let mut is_open = use_signal(|| false);
     let (label, icon_type) = get_theme_display(current_theme);
+
+    let label_class = if compact_mobile {
+        "font-semibold hidden sm:inline"
+    } else {
+        "font-semibold"
+    };
 
     rsx! {
         div { class: "relative inline-block text-left",
@@ -128,7 +135,7 @@ pub fn ThemeSelectorDropdown(
                         "moon" => rsx! { IconMoon { size: "14" } },
                         _ => rsx! { IconSparkles { size: "14" } },
                     }
-                    span { class: "font-semibold", "{label}" }
+                    span { class: "{label_class}", "{label}" }
                 }
                 span {
                     class: if *is_open.read() { "transition-transform duration-200 rotate-180 text-[var(--text-muted)]" } else { "transition-transform duration-200 text-[var(--text-muted)]" },
