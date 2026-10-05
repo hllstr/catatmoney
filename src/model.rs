@@ -85,6 +85,10 @@ pub enum ThemeMode {
     TokyoNight,
     RosePine,
     SakuraBlossom,
+    CatppuccinLatte,
+    CatppuccinFrappe,
+    CatppuccinMacchiato,
+    CatppuccinMocha,
 }
 
 pub const EXPENSE_CATEGORIES: &[&str] = &[
@@ -543,6 +547,10 @@ pub fn load_theme() -> ThemeMode {
                         "tokyo-night" => return ThemeMode::TokyoNight,
                         "rose-pine" => return ThemeMode::RosePine,
                         "sakura-blossom" => return ThemeMode::SakuraBlossom,
+                        "catppuccin-latte" => return ThemeMode::CatppuccinLatte,
+                        "catppuccin-frappe" => return ThemeMode::CatppuccinFrappe,
+                        "catppuccin-macchiato" => return ThemeMode::CatppuccinMacchiato,
+                        "catppuccin-mocha" => return ThemeMode::CatppuccinMocha,
                         _ => return ThemeMode::Dark,
                     }
                 }
@@ -564,6 +572,10 @@ pub fn save_theme(_theme: ThemeMode) {
                     ThemeMode::TokyoNight => "tokyo-night",
                     ThemeMode::RosePine => "rose-pine",
                     ThemeMode::SakuraBlossom => "sakura-blossom",
+                    ThemeMode::CatppuccinLatte => "catppuccin-latte",
+                    ThemeMode::CatppuccinFrappe => "catppuccin-frappe",
+                    ThemeMode::CatppuccinMacchiato => "catppuccin-macchiato",
+                    ThemeMode::CatppuccinMocha => "catppuccin-mocha",
                 };
                 let _ = storage.set_item(THEME_KEY, val);
             }

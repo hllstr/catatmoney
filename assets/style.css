@@ -200,6 +200,162 @@ html.sakura-blossom, .sakura-blossom {
   --shadow-card: 0 1px 3px rgba(224, 108, 136, 0.06);
 }
 
+/* Catppuccin Latte Theme (Official Palette Light) */
+html.catppuccin-latte, .catppuccin-latte {
+  --bg-app: #eff1f5;
+  --bg-surface: #ffffff;
+  --bg-surface-subtle: #e6e9ef;
+  --bg-input: #f0f2f7;
+  --bg-hover: #e6e9ef;
+  
+  --border-subtle: #ccd0da;
+  --border-hover: #bcc0cc;
+  --border-focus: #8839ef;
+  --border-color: var(--border-subtle);
+  --bg-card: var(--bg-surface);
+  
+  --text-primary: #4c4f69;
+  --text-secondary: #5c5f77;
+  --text-muted: #8c8fa1;
+  
+  --accent: #8839ef;
+  --accent-contrast: #ffffff;
+  
+  --positive: #40a02b;
+  --positive-bg: rgba(64, 160, 43, 0.1);
+  --positive-border: rgba(64, 160, 43, 0.25);
+  
+  --negative: #d20f39;
+  --negative-bg: rgba(210, 15, 57, 0.1);
+  --negative-border: rgba(210, 15, 57, 0.25);
+  
+  --transfer: #df8e1d;
+  --transfer-bg: rgba(223, 142, 29, 0.1);
+  --transfer-border: rgba(223, 142, 29, 0.25);
+  
+  --dock-bg: rgba(255, 255, 255, 0.92);
+  --dock-border: #ccd0da;
+  --shadow-dock: 0 10px 30px -5px rgba(136, 57, 239, 0.12);
+  --shadow-card: 0 1px 3px rgba(76, 79, 105, 0.08);
+}
+
+/* Catppuccin Frappé Theme (Official Palette Dark - Low Contrast) */
+html.catppuccin-frappe, .catppuccin-frappe {
+  --bg-app: #292c3c;
+  --bg-surface: #303446;
+  --bg-surface-subtle: #414559;
+  --bg-input: #363a4e;
+  --bg-hover: #414559;
+  
+  --border-subtle: #414559;
+  --border-hover: #51576d;
+  --border-focus: #ca9ee6;
+  --border-color: var(--border-subtle);
+  --bg-card: var(--bg-surface);
+  
+  --text-primary: #c6d0f5;
+  --text-secondary: #b5bfe2;
+  --text-muted: #838ba7;
+  
+  --accent: #ca9ee6;
+  --accent-contrast: #292c3c;
+  
+  --positive: #a6d189;
+  --positive-bg: rgba(166, 209, 137, 0.12);
+  --positive-border: rgba(166, 209, 137, 0.25);
+  
+  --negative: #e78284;
+  --negative-bg: rgba(231, 130, 132, 0.12);
+  --negative-border: rgba(231, 130, 132, 0.25);
+  
+  --transfer: #e5c890;
+  --transfer-bg: rgba(229, 200, 144, 0.12);
+  --transfer-border: rgba(229, 200, 144, 0.25);
+  
+  --dock-bg: rgba(48, 52, 70, 0.92);
+  --dock-border: #414559;
+  --shadow-dock: 0 10px 30px -5px rgba(0, 0, 0, 0.45);
+  --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+/* Catppuccin Macchiato Theme (Official Palette Dark - Mid Contrast) */
+html.catppuccin-macchiato, .catppuccin-macchiato {
+  --bg-app: #1e2030;
+  --bg-surface: #24273a;
+  --bg-surface-subtle: #363a4f;
+  --bg-input: #2a2e43;
+  --bg-hover: #363a4f;
+  
+  --border-subtle: #363a4f;
+  --border-hover: #494d64;
+  --border-focus: #c6a0f6;
+  --border-color: var(--border-subtle);
+  --bg-card: var(--bg-surface);
+  
+  --text-primary: #cad3f5;
+  --text-secondary: #b8c0e0;
+  --text-muted: #8087a2;
+  
+  --accent: #c6a0f6;
+  --accent-contrast: #1e2030;
+  
+  --positive: #a6da95;
+  --positive-bg: rgba(166, 218, 149, 0.12);
+  --positive-border: rgba(166, 218, 149, 0.25);
+  
+  --negative: #ed8796;
+  --negative-bg: rgba(237, 135, 150, 0.12);
+  --negative-border: rgba(237, 135, 150, 0.25);
+  
+  --transfer: #eed49f;
+  --transfer-bg: rgba(238, 212, 159, 0.12);
+  --transfer-border: rgba(238, 212, 159, 0.25);
+  
+  --dock-bg: rgba(36, 39, 58, 0.92);
+  --dock-border: #363a4f;
+  --shadow-dock: 0 10px 30px -5px rgba(0, 0, 0, 0.5);
+  --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.22);
+}
+
+/* Catppuccin Mocha Theme (Official Palette Dark - High Contrast) */
+html.catppuccin-mocha, .catppuccin-mocha {
+  --bg-app: #181825;
+  --bg-surface: #1e1e2e;
+  --bg-surface-subtle: #313244;
+  --bg-input: #252538;
+  --bg-hover: #313244;
+  
+  --border-subtle: #313244;
+  --border-hover: #45475a;
+  --border-focus: #cba6f7;
+  --border-color: var(--border-subtle);
+  --bg-card: var(--bg-surface);
+  
+  --text-primary: #cdd6f4;
+  --text-secondary: #bac2de;
+  --text-muted: #7f849c;
+  
+  --accent: #cba6f7;
+  --accent-contrast: #181825;
+  
+  --positive: #a6e3a1;
+  --positive-bg: rgba(166, 227, 161, 0.12);
+  --positive-border: rgba(166, 227, 161, 0.25);
+  
+  --negative: #f38ba8;
+  --negative-bg: rgba(243, 139, 168, 0.12);
+  --negative-border: rgba(243, 139, 168, 0.25);
+  
+  --transfer: #fab387;
+  --transfer-bg: rgba(250, 179, 135, 0.12);
+  --transfer-border: rgba(250, 179, 135, 0.25);
+  
+  --dock-bg: rgba(30, 30, 46, 0.92);
+  --dock-border: #313244;
+  --shadow-dock: 0 10px 30px -5px rgba(0, 0, 0, 0.55);
+  --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.25);
+}
+
 *, *::before, *::after {
   box-sizing: border-box;
   margin: 0;

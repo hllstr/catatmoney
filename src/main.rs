@@ -62,6 +62,10 @@ pub fn App() -> Element {
                         let _ = class_list.remove_1("tokyo-night");
                         let _ = class_list.remove_1("rose-pine");
                         let _ = class_list.remove_1("sakura-blossom");
+                        let _ = class_list.remove_1("catppuccin-latte");
+                        let _ = class_list.remove_1("catppuccin-frappe");
+                        let _ = class_list.remove_1("catppuccin-macchiato");
+                        let _ = class_list.remove_1("catppuccin-mocha");
                         match _current_mode {
                             ThemeMode::Dark => {
                                 let _ = class_list.add_1("dark");
@@ -80,6 +84,22 @@ pub fn App() -> Element {
                             ThemeMode::SakuraBlossom => {
                                 let _ = class_list.add_1("light");
                                 let _ = class_list.add_1("sakura-blossom");
+                            }
+                            ThemeMode::CatppuccinLatte => {
+                                let _ = class_list.add_1("light");
+                                let _ = class_list.add_1("catppuccin-latte");
+                            }
+                            ThemeMode::CatppuccinFrappe => {
+                                let _ = class_list.add_1("dark");
+                                let _ = class_list.add_1("catppuccin-frappe");
+                            }
+                            ThemeMode::CatppuccinMacchiato => {
+                                let _ = class_list.add_1("dark");
+                                let _ = class_list.add_1("catppuccin-macchiato");
+                            }
+                            ThemeMode::CatppuccinMocha => {
+                                let _ = class_list.add_1("dark");
+                                let _ = class_list.add_1("catppuccin-mocha");
                             }
                         }
                     }
@@ -180,14 +200,18 @@ pub fn App() -> Element {
         save_categories(&cats);
     };
 
-    // Handler toggle tema Light / Dark / Tokyo Night
+    // Handler toggle tema Light / Dark / Tokyo Night / Rosé Pine / Sakura Blossom / Catppuccin
     let mut toggle_theme = move || {
         let next_theme = match *theme.read() {
             ThemeMode::Dark => ThemeMode::Light,
             ThemeMode::Light => ThemeMode::TokyoNight,
             ThemeMode::TokyoNight => ThemeMode::RosePine,
             ThemeMode::RosePine => ThemeMode::SakuraBlossom,
-            ThemeMode::SakuraBlossom => ThemeMode::Dark,
+            ThemeMode::SakuraBlossom => ThemeMode::CatppuccinLatte,
+            ThemeMode::CatppuccinLatte => ThemeMode::CatppuccinFrappe,
+            ThemeMode::CatppuccinFrappe => ThemeMode::CatppuccinMacchiato,
+            ThemeMode::CatppuccinMacchiato => ThemeMode::CatppuccinMocha,
+            ThemeMode::CatppuccinMocha => ThemeMode::Dark,
         };
         theme.set(next_theme);
         save_theme(next_theme);
@@ -199,6 +223,10 @@ pub fn App() -> Element {
         ThemeMode::TokyoNight => "dark tokyo-night",
         ThemeMode::RosePine => "dark rose-pine",
         ThemeMode::SakuraBlossom => "light sakura-blossom",
+        ThemeMode::CatppuccinLatte => "light catppuccin-latte",
+        ThemeMode::CatppuccinFrappe => "dark catppuccin-frappe",
+        ThemeMode::CatppuccinMacchiato => "dark catppuccin-macchiato",
+        ThemeMode::CatppuccinMocha => "dark catppuccin-mocha",
     };
 
     let theme_color_meta = match *theme.read() {
@@ -207,6 +235,10 @@ pub fn App() -> Element {
         ThemeMode::TokyoNight => "#16161e",
         ThemeMode::RosePine => "#191724",
         ThemeMode::SakuraBlossom => "#fff5f7",
+        ThemeMode::CatppuccinLatte => "#eff1f5",
+        ThemeMode::CatppuccinFrappe => "#292c3c",
+        ThemeMode::CatppuccinMacchiato => "#1e2030",
+        ThemeMode::CatppuccinMocha => "#181825",
     };
 
     let is_onboarded = profile.read().as_ref().map(|p| p.is_onboarded).unwrap_or(false);

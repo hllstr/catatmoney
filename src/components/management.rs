@@ -135,8 +135,8 @@ pub fn ManagementView(
                     },
                     match current_theme {
                         ThemeMode::Dark => rsx! { IconMoon { size: "15" } },
-                        ThemeMode::Light | ThemeMode::SakuraBlossom => rsx! { IconSun { size: "15" } },
-                        ThemeMode::TokyoNight | ThemeMode::RosePine => rsx! { IconSparkles { size: "15" } },
+                        ThemeMode::Light | ThemeMode::SakuraBlossom | ThemeMode::CatppuccinLatte => rsx! { IconSun { size: "15" } },
+                        ThemeMode::TokyoNight | ThemeMode::RosePine | ThemeMode::CatppuccinFrappe | ThemeMode::CatppuccinMacchiato | ThemeMode::CatppuccinMocha => rsx! { IconSparkles { size: "15" } },
                     }
                     span { class: "tab-label-full", "Tema & Tampilan" }
                     span { class: "tab-label-short", "Tema Tampilan" }
@@ -616,8 +616,8 @@ pub fn ManagementView(
 
                 // 3. TEMA & TAMPILAN ANTARMUKA
                 ManageTab::Theme => rsx! {
-                    div { class: "manage-section",
-                        div { class: "manage-section-header mb-5",
+                    div { class: "manage-section space-y-6",
+                        div { class: "manage-section-header",
                             div {
                                 h3 { class: "text-sm font-bold text-[var(--text-primary)]", "Tema & Tampilan Antarmuka" }
                                 p { class: "text-xs text-muted mt-0.5",
@@ -626,149 +626,277 @@ pub fn ManagementView(
                             }
                         }
 
-                        div { class: "theme-picker-grid grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5",
-                            // Kartu Obsidian Dark
-                            div {
-                                class: if current_theme == ThemeMode::Dark { "theme-card active cursor-pointer" } else { "theme-card cursor-pointer" },
-                                onclick: move |_| on_change_theme.call(ThemeMode::Dark),
-                                div { class: "theme-card-header flex items-center justify-between mb-3",
-                                    div { class: "flex items-center gap-2",
-                                        div { class: "w-7 h-7 rounded-lg bg-[#18181c] border border-[#27272a] flex items-center justify-center text-[#fafafa]",
-                                            IconMoon { size: "14" }
-                                        }
-                                        span { class: "text-sm font-bold text-[var(--text-primary)]", "Obsidian Dark" }
-                                    }
-                                    if current_theme == ThemeMode::Dark {
-                                        span { class: "px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-[var(--text-primary)] text-[var(--bg-app)]", "Aktif" }
-                                    }
-                                }
-                                p { class: "text-xs text-[var(--text-secondary)] leading-relaxed mb-4",
-                                    "Gaya gelap monokromatik Swiss FinTech berfokus pada ketajaman data dan kenyamanan mata di ruangan redup."
-                                }
-                                div { class: "theme-swatch-bar flex items-center gap-1.5 p-2 rounded-lg bg-[#09090b] border border-[#27272a]",
-                                    div { class: "w-4 h-4 rounded bg-[#09090b] border border-[#3f3f46]", title: "Latar Belakang" }
-                                    div { class: "w-4 h-4 rounded bg-[#18181c] border border-[#3f3f46]", title: "Permukaan Panel" }
-                                    div { class: "w-4 h-4 rounded bg-[#27272a]", title: "Border Tipis" }
-                                    div { class: "w-4 h-4 rounded bg-[#fafafa]", title: "Teks Utama" }
-                                    span { class: "text-[11px] text-[#71717a] ml-auto font-mono", "#09090B" }
-                                }
+                        // Koleksi Standar & Estetika Kota
+                        div { class: "space-y-3",
+                            div { class: "flex items-center gap-2",
+                                span { class: "text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wider", "Koleksi Standar & Estetika Kota" }
+                                span { class: "h-px flex-1 bg-[var(--border-subtle)]" }
                             }
 
-                            // Kartu Clean Light
-                            div {
-                                class: if current_theme == ThemeMode::Light { "theme-card active cursor-pointer" } else { "theme-card cursor-pointer" },
-                                onclick: move |_| on_change_theme.call(ThemeMode::Light),
-                                div { class: "theme-card-header flex items-center justify-between mb-3",
-                                    div { class: "flex items-center gap-2",
-                                        div { class: "w-7 h-7 rounded-lg bg-[#f4f4f7] border border-[#e4e4e9] flex items-center justify-center text-[#09090b]",
-                                            IconSun { size: "14" }
+                            div { class: "theme-picker-grid grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5",
+                                // Kartu Obsidian Dark
+                                div {
+                                    class: if current_theme == ThemeMode::Dark { "theme-card active cursor-pointer" } else { "theme-card cursor-pointer" },
+                                    onclick: move |_| on_change_theme.call(ThemeMode::Dark),
+                                    div { class: "theme-card-header flex items-center justify-between mb-3",
+                                        div { class: "flex items-center gap-2",
+                                            div { class: "w-7 h-7 rounded-lg bg-[#18181c] border border-[#27272a] flex items-center justify-center text-[#fafafa]",
+                                                IconMoon { size: "14" }
+                                            }
+                                            span { class: "text-sm font-bold text-[var(--text-primary)]", "Obsidian Dark" }
                                         }
-                                        span { class: "text-sm font-bold text-[var(--text-primary)]", "Clean Light" }
+                                        if current_theme == ThemeMode::Dark {
+                                            span { class: "px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-[var(--text-primary)] text-[var(--bg-app)]", "Aktif" }
+                                        }
                                     }
-                                    if current_theme == ThemeMode::Light {
-                                        span { class: "px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-[var(--text-primary)] text-[var(--bg-app)]", "Aktif" }
+                                    p { class: "text-xs text-[var(--text-secondary)] leading-relaxed mb-4",
+                                        "Gaya gelap monokromatik Swiss FinTech berfokus pada ketajaman data dan kenyamanan mata di ruangan redup."
+                                    }
+                                    div { class: "theme-swatch-bar flex items-center gap-1.5 p-2 rounded-lg bg-[#09090b] border border-[#27272a]",
+                                        div { class: "w-4 h-4 rounded bg-[#09090b] border border-[#3f3f46]", title: "Latar Belakang" }
+                                        div { class: "w-4 h-4 rounded bg-[#18181c] border border-[#3f3f46]", title: "Permukaan Panel" }
+                                        div { class: "w-4 h-4 rounded bg-[#27272a]", title: "Border Tipis" }
+                                        div { class: "w-4 h-4 rounded bg-[#fafafa]", title: "Teks Utama" }
+                                        span { class: "text-[11px] text-[#71717a] ml-auto font-mono", "#09090B" }
                                     }
                                 }
-                                p { class: "text-xs text-[var(--text-secondary)] leading-relaxed mb-4",
-                                    "Gaya terang bersih dengan kontras tipografi tajam, pencahayaan alami, dan kesan jernih profesional."
-                                }
-                                div { class: "theme-swatch-bar flex items-center gap-1.5 p-2 rounded-lg bg-[#fcfcfd] border border-[#e4e4e9]",
-                                    div { class: "w-4 h-4 rounded bg-[#fcfcfd] border border-[#cbd5e1]", title: "Latar Belakang" }
-                                    div { class: "w-4 h-4 rounded bg-[#ffffff] border border-[#cbd5e1]", title: "Permukaan Panel" }
-                                    div { class: "w-4 h-4 rounded bg-[#e4e4e9]", title: "Border Tipis" }
-                                    div { class: "w-4 h-4 rounded bg-[#09090b]", title: "Teks Utama" }
-                                    span { class: "text-[11px] text-[#64748b] ml-auto font-mono", "#FCFCFD" }
-                                }
-                            }
 
-                            // Kartu Tokyo Night
-                            div {
-                                class: if current_theme == ThemeMode::TokyoNight { "theme-card active cursor-pointer" } else { "theme-card cursor-pointer" },
-                                onclick: move |_| on_change_theme.call(ThemeMode::TokyoNight),
-                                div { class: "theme-card-header flex items-center justify-between mb-3",
-                                    div { class: "flex items-center gap-2",
-                                        div { class: "w-7 h-7 rounded-lg bg-[#1f2335] border border-[#292e42] flex items-center justify-center text-[#7aa2f7]",
-                                            IconSparkles { size: "14" }
+                                // Kartu Clean Light
+                                div {
+                                    class: if current_theme == ThemeMode::Light { "theme-card active cursor-pointer" } else { "theme-card cursor-pointer" },
+                                    onclick: move |_| on_change_theme.call(ThemeMode::Light),
+                                    div { class: "theme-card-header flex items-center justify-between mb-3",
+                                        div { class: "flex items-center gap-2",
+                                            div { class: "w-7 h-7 rounded-lg bg-[#f4f4f7] border border-[#e4e4e9] flex items-center justify-center text-[#09090b]",
+                                                IconSun { size: "14" }
+                                            }
+                                            span { class: "text-sm font-bold text-[var(--text-primary)]", "Clean Light" }
                                         }
-                                        span { class: "text-sm font-bold text-[var(--text-primary)]", "Tokyo Night" }
+                                        if current_theme == ThemeMode::Light {
+                                            span { class: "px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-[var(--text-primary)] text-[var(--bg-app)]", "Aktif" }
+                                        }
                                     }
-                                    if current_theme == ThemeMode::TokyoNight {
-                                        span { class: "px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-[var(--text-primary)] text-[var(--bg-app)]", "Aktif" }
+                                    p { class: "text-xs text-[var(--text-secondary)] leading-relaxed mb-4",
+                                        "Gaya terang bersih dengan kontras tipografi tajam, pencahayaan alami, dan kesan jernih profesional."
+                                    }
+                                    div { class: "theme-swatch-bar flex items-center gap-1.5 p-2 rounded-lg bg-[#fcfcfd] border border-[#e4e4e9]",
+                                        div { class: "w-4 h-4 rounded bg-[#fcfcfd] border border-[#cbd5e1]", title: "Latar Belakang" }
+                                        div { class: "w-4 h-4 rounded bg-[#ffffff] border border-[#cbd5e1]", title: "Permukaan Panel" }
+                                        div { class: "w-4 h-4 rounded bg-[#e4e4e9]", title: "Border Tipis" }
+                                        div { class: "w-4 h-4 rounded bg-[#09090b]", title: "Teks Utama" }
+                                        span { class: "text-[11px] text-[#64748b] ml-auto font-mono", "#FCFCFD" }
                                     }
                                 }
-                                p { class: "text-xs text-[var(--text-secondary)] leading-relaxed mb-4",
-                                    "Palet resmi Neovim bernuansa malam Tokyo dengan latar biru pekat, aksen elektrik, dan kontras sejuk di mata."
-                                }
-                                div { class: "theme-swatch-bar flex items-center gap-1.5 p-2 rounded-lg bg-[#16161e] border border-[#292e42]",
-                                    div { class: "w-4 h-4 rounded bg-[#16161e] border border-[#3b4261]", title: "Latar Belakang" }
-                                    div { class: "w-4 h-4 rounded bg-[#1a1b26] border border-[#3b4261]", title: "Permukaan Panel" }
-                                    div { class: "w-4 h-4 rounded bg-[#292e42]", title: "Border Tipis" }
-                                    div { class: "w-4 h-4 rounded bg-[#7aa2f7]", title: "Aksen Biru Tokyo" }
-                                    div { class: "w-4 h-4 rounded bg-[#c0caf5]", title: "Teks Utama" }
-                                    span { class: "text-[11px] text-[#565f89] ml-auto font-mono", "#16161E" }
-                                }
-                            }
 
-                            // Kartu Rosé Pine
-                            div {
-                                class: if current_theme == ThemeMode::RosePine { "theme-card active cursor-pointer" } else { "theme-card cursor-pointer" },
-                                onclick: move |_| on_change_theme.call(ThemeMode::RosePine),
-                                div { class: "theme-card-header flex items-center justify-between mb-3",
-                                    div { class: "flex items-center gap-2",
-                                        div { class: "w-7 h-7 rounded-lg bg-[#26233a] border border-[#403d52] flex items-center justify-center text-[#ebbcba]",
-                                            IconSparkles { size: "14" }
+                                // Kartu Tokyo Night
+                                div {
+                                    class: if current_theme == ThemeMode::TokyoNight { "theme-card active cursor-pointer" } else { "theme-card cursor-pointer" },
+                                    onclick: move |_| on_change_theme.call(ThemeMode::TokyoNight),
+                                    div { class: "theme-card-header flex items-center justify-between mb-3",
+                                        div { class: "flex items-center gap-2",
+                                            div { class: "w-7 h-7 rounded-lg bg-[#1f2335] border border-[#292e42] flex items-center justify-center text-[#7aa2f7]",
+                                                IconSparkles { size: "14" }
+                                            }
+                                            span { class: "text-sm font-bold text-[var(--text-primary)]", "Tokyo Night" }
                                         }
-                                        span { class: "text-sm font-bold text-[var(--text-primary)]", "Rosé Pine" }
+                                        if current_theme == ThemeMode::TokyoNight {
+                                            span { class: "px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-[var(--text-primary)] text-[var(--bg-app)]", "Aktif" }
+                                        }
                                     }
-                                    if current_theme == ThemeMode::RosePine {
-                                        span { class: "px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-[var(--text-primary)] text-[var(--bg-app)]", "Aktif" }
+                                    p { class: "text-xs text-[var(--text-secondary)] leading-relaxed mb-4",
+                                        "Palet resmi Neovim bernuansa malam Tokyo dengan latar biru pekat, aksen elektrik, dan kontras sejuk di mata."
+                                    }
+                                    div { class: "theme-swatch-bar flex items-center gap-1.5 p-2 rounded-lg bg-[#16161e] border border-[#292e42]",
+                                        div { class: "w-4 h-4 rounded bg-[#16161e] border border-[#3b4261]", title: "Latar Belakang" }
+                                        div { class: "w-4 h-4 rounded bg-[#1a1b26] border border-[#3b4261]", title: "Permukaan Panel" }
+                                        div { class: "w-4 h-4 rounded bg-[#292e42]", title: "Border Tipis" }
+                                        div { class: "w-4 h-4 rounded bg-[#7aa2f7]", title: "Aksen Biru Tokyo" }
+                                        div { class: "w-4 h-4 rounded bg-[#c0caf5]", title: "Teks Utama" }
+                                        span { class: "text-[11px] text-[#565f89] ml-auto font-mono", "#16161E" }
                                     }
                                 }
-                                p { class: "text-xs text-[var(--text-secondary)] leading-relaxed mb-4",
-                                    "Palet vintage Soho bernuansa arang plum hangat dengan aksen dusty rose, seafoam, dan gold amber."
-                                }
-                                div { class: "theme-swatch-bar flex items-center gap-1.5 p-2 rounded-lg bg-[#191724] border border-[#26233a]",
-                                    div { class: "w-4 h-4 rounded bg-[#191724] border border-[#403d52]", title: "Latar Belakang" }
-                                    div { class: "w-4 h-4 rounded bg-[#1f1d2e] border border-[#403d52]", title: "Permukaan Panel" }
-                                    div { class: "w-4 h-4 rounded bg-[#26233a]", title: "Border Tipis" }
-                                    div { class: "w-4 h-4 rounded bg-[#ebbcba]", title: "Aksen Dusty Rose" }
-                                    div { class: "w-4 h-4 rounded bg-[#e0def4]", title: "Teks Utama" }
-                                    span { class: "text-[11px] text-[#908caa] ml-auto font-mono", "#191724" }
-                                }
-                            }
 
-                            // Kartu Sakura Blossom
-                            div {
-                                class: if current_theme == ThemeMode::SakuraBlossom { "theme-card active cursor-pointer" } else { "theme-card cursor-pointer" },
-                                onclick: move |_| on_change_theme.call(ThemeMode::SakuraBlossom),
-                                div { class: "theme-card-header flex items-center justify-between mb-3",
-                                    div { class: "flex items-center gap-2",
-                                        div { class: "w-7 h-7 rounded-lg bg-[#fdf0f3] border border-[#f3d6dd] flex items-center justify-center text-[#e06c88]",
-                                            IconSun { size: "14" }
+                                // Kartu Rosé Pine
+                                div {
+                                    class: if current_theme == ThemeMode::RosePine { "theme-card active cursor-pointer" } else { "theme-card cursor-pointer" },
+                                    onclick: move |_| on_change_theme.call(ThemeMode::RosePine),
+                                    div { class: "theme-card-header flex items-center justify-between mb-3",
+                                        div { class: "flex items-center gap-2",
+                                            div { class: "w-7 h-7 rounded-lg bg-[#26233a] border border-[#403d52] flex items-center justify-center text-[#ebbcba]",
+                                                IconSparkles { size: "14" }
+                                            }
+                                            span { class: "text-sm font-bold text-[var(--text-primary)]", "Rosé Pine" }
                                         }
-                                        span { class: "text-sm font-bold text-[var(--text-primary)]", "Sakura Blossom" }
+                                        if current_theme == ThemeMode::RosePine {
+                                            span { class: "px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-[var(--text-primary)] text-[var(--bg-app)]", "Aktif" }
+                                        }
                                     }
-                                    if current_theme == ThemeMode::SakuraBlossom {
-                                        span { class: "px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-[var(--text-primary)] text-[var(--bg-app)]", "Aktif" }
+                                    p { class: "text-xs text-[var(--text-secondary)] leading-relaxed mb-4",
+                                        "Palet vintage Soho bernuansa arang plum hangat dengan aksen dusty rose, seafoam, dan gold amber."
+                                    }
+                                    div { class: "theme-swatch-bar flex items-center gap-1.5 p-2 rounded-lg bg-[#191724] border border-[#26233a]",
+                                        div { class: "w-4 h-4 rounded bg-[#191724] border border-[#403d52]", title: "Latar Belakang" }
+                                        div { class: "w-4 h-4 rounded bg-[#1f1d2e] border border-[#403d52]", title: "Permukaan Panel" }
+                                        div { class: "w-4 h-4 rounded bg-[#26233a]", title: "Border Tipis" }
+                                        div { class: "w-4 h-4 rounded bg-[#ebbcba]", title: "Aksen Dusty Rose" }
+                                        div { class: "w-4 h-4 rounded bg-[#e0def4]", title: "Teks Utama" }
+                                        span { class: "text-[11px] text-[#908caa] ml-auto font-mono", "#191724" }
                                     }
                                 }
-                                p { class: "text-xs text-[var(--text-secondary)] leading-relaxed mb-4",
-                                    "Gaya terang lembut bernuansa kelopak sakura dengan latar blush hangat dan aksen pink pastel."
-                                }
-                                div { class: "theme-swatch-bar flex items-center gap-1.5 p-2 rounded-lg bg-[#fff5f7] border border-[#f3d6dd]",
-                                    div { class: "w-4 h-4 rounded bg-[#fff5f7] border border-[#e8b7c3]", title: "Latar Belakang" }
-                                    div { class: "w-4 h-4 rounded bg-[#ffffff] border border-[#e8b7c3]", title: "Permukaan Panel" }
-                                    div { class: "w-4 h-4 rounded bg-[#f3d6dd]", title: "Border Tipis" }
-                                    div { class: "w-4 h-4 rounded bg-[#e06c88]", title: "Aksen Sakura Pink" }
-                                    div { class: "w-4 h-4 rounded bg-[#3b2832]", title: "Teks Utama" }
-                                    span { class: "text-[11px] text-[#9c7d8c] ml-auto font-mono", "#FFF5F7" }
+
+                                // Kartu Sakura Blossom
+                                div {
+                                    class: if current_theme == ThemeMode::SakuraBlossom { "theme-card active cursor-pointer" } else { "theme-card cursor-pointer" },
+                                    onclick: move |_| on_change_theme.call(ThemeMode::SakuraBlossom),
+                                    div { class: "theme-card-header flex items-center justify-between mb-3",
+                                        div { class: "flex items-center gap-2",
+                                            div { class: "w-7 h-7 rounded-lg bg-[#fdf0f3] border border-[#f3d6dd] flex items-center justify-center text-[#e06c88]",
+                                                IconSun { size: "14" }
+                                            }
+                                            span { class: "text-sm font-bold text-[var(--text-primary)]", "Sakura Blossom" }
+                                        }
+                                        if current_theme == ThemeMode::SakuraBlossom {
+                                            span { class: "px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-[var(--text-primary)] text-[var(--bg-app)]", "Aktif" }
+                                        }
+                                    }
+                                    p { class: "text-xs text-[var(--text-secondary)] leading-relaxed mb-4",
+                                        "Gaya terang lembut bernuansa kelopak sakura dengan latar blush hangat dan aksen pink pastel."
+                                    }
+                                    div { class: "theme-swatch-bar flex items-center gap-1.5 p-2 rounded-lg bg-[#fff5f7] border border-[#f3d6dd]",
+                                        div { class: "w-4 h-4 rounded bg-[#fff5f7] border border-[#e8b7c3]", title: "Latar Belakang" }
+                                        div { class: "w-4 h-4 rounded bg-[#ffffff] border border-[#e8b7c3]", title: "Permukaan Panel" }
+                                        div { class: "w-4 h-4 rounded bg-[#f3d6dd]", title: "Border Tipis" }
+                                        div { class: "w-4 h-4 rounded bg-[#e06c88]", title: "Aksen Sakura Pink" }
+                                        div { class: "w-4 h-4 rounded bg-[#3b2832]", title: "Teks Utama" }
+                                        span { class: "text-[11px] text-[#9c7d8c] ml-auto font-mono", "#FFF5F7" }
+                                    }
                                 }
                             }
                         }
 
-                        div { class: "mt-4 p-3.5 rounded-xl border border-dashed border-[var(--border-subtle)] bg-[var(--bg-surface-subtle)] flex items-center gap-3 text-xs text-[var(--text-muted)]",
-                            IconSparkles { size: "16" }
-                            span { "Dukungan tema tambahan sedang dipersiapkan untuk pembaruan berikutnya." }
+                        // Catppuccin Series (Official Palette)
+                        div { class: "space-y-3 pt-2",
+                            div { class: "flex items-center justify-between gap-2",
+                                div { class: "flex items-center gap-2",
+                                    span { class: "text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wider", "Catppuccin Series" }
+                                    span { class: "text-[10px] font-bold px-2 py-0.5 rounded-full bg-[var(--bg-surface-subtle)] border border-[var(--border-subtle)] text-[var(--accent)]", "Official Palette" }
+                                }
+                                span { class: "h-px flex-1 bg-[var(--border-subtle)]" }
+                            }
+
+                            div { class: "theme-picker-grid grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5",
+                                // 1. Catppuccin Latte (Light)
+                                div {
+                                    class: if current_theme == ThemeMode::CatppuccinLatte { "theme-card active cursor-pointer" } else { "theme-card cursor-pointer" },
+                                    onclick: move |_| on_change_theme.call(ThemeMode::CatppuccinLatte),
+                                    div { class: "theme-card-header flex items-center justify-between mb-3",
+                                        div { class: "flex items-center gap-2",
+                                            div { class: "w-7 h-7 rounded-lg bg-[#eff1f5] border border-[#ccd0da] flex items-center justify-center text-[#8839ef]",
+                                                IconSun { size: "14" }
+                                            }
+                                            span { class: "text-sm font-bold text-[var(--text-primary)]", "Catppuccin Latte" }
+                                        }
+                                        if current_theme == ThemeMode::CatppuccinLatte {
+                                            span { class: "px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-[var(--text-primary)] text-[var(--bg-app)]", "Aktif" }
+                                        }
+                                    }
+                                    p { class: "text-xs text-[var(--text-secondary)] leading-relaxed mb-4",
+                                        "Palet terang resmi Catppuccin dengan nuansa latte hangat, kontras tajam, dan aksen mauve lavender."
+                                    }
+                                    div { class: "theme-swatch-bar flex items-center gap-1.5 p-2 rounded-lg bg-[#eff1f5] border border-[#ccd0da]",
+                                        div { class: "w-4 h-4 rounded bg-[#eff1f5] border border-[#bcc0cc]", title: "Latar Belakang" }
+                                        div { class: "w-4 h-4 rounded bg-[#ffffff] border border-[#bcc0cc]", title: "Permukaan Panel" }
+                                        div { class: "w-4 h-4 rounded bg-[#ccd0da]", title: "Border Tipis" }
+                                        div { class: "w-4 h-4 rounded bg-[#8839ef]", title: "Aksen Mauve" }
+                                        div { class: "w-4 h-4 rounded bg-[#4c4f69]", title: "Teks Utama" }
+                                        span { class: "text-[11px] text-[#8c8fa1] ml-auto font-mono", "#EFF1F5" }
+                                    }
+                                }
+
+                                // 2. Catppuccin Frappé (Dark - Low Contrast)
+                                div {
+                                    class: if current_theme == ThemeMode::CatppuccinFrappe { "theme-card active cursor-pointer" } else { "theme-card cursor-pointer" },
+                                    onclick: move |_| on_change_theme.call(ThemeMode::CatppuccinFrappe),
+                                    div { class: "theme-card-header flex items-center justify-between mb-3",
+                                        div { class: "flex items-center gap-2",
+                                            div { class: "w-7 h-7 rounded-lg bg-[#303446] border border-[#414559] flex items-center justify-center text-[#ca9ee6]",
+                                                IconSparkles { size: "14" }
+                                            }
+                                            span { class: "text-sm font-bold text-[var(--text-primary)]", "Catppuccin Frappé" }
+                                        }
+                                        if current_theme == ThemeMode::CatppuccinFrappe {
+                                            span { class: "px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-[var(--text-primary)] text-[var(--bg-app)]", "Aktif" }
+                                        }
+                                    }
+                                    p { class: "text-xs text-[var(--text-secondary)] leading-relaxed mb-4",
+                                        "Varian gelap sejuk dengan kontras terlembut (low-contrast) untuk sesi membaca keuangan yang tenang."
+                                    }
+                                    div { class: "theme-swatch-bar flex items-center gap-1.5 p-2 rounded-lg bg-[#292c3c] border border-[#414559]",
+                                        div { class: "w-4 h-4 rounded bg-[#292c3c] border border-[#51576d]", title: "Latar Belakang" }
+                                        div { class: "w-4 h-4 rounded bg-[#303446] border border-[#51576d]", title: "Permukaan Panel" }
+                                        div { class: "w-4 h-4 rounded bg-[#414559]", title: "Border Tipis" }
+                                        div { class: "w-4 h-4 rounded bg-[#ca9ee6]", title: "Aksen Mauve" }
+                                        div { class: "w-4 h-4 rounded bg-[#c6d0f5]", title: "Teks Utama" }
+                                        span { class: "text-[11px] text-[#838ba7] ml-auto font-mono", "#292C3C" }
+                                    }
+                                }
+
+                                // 3. Catppuccin Macchiato (Dark - Mid Contrast)
+                                div {
+                                    class: if current_theme == ThemeMode::CatppuccinMacchiato { "theme-card active cursor-pointer" } else { "theme-card cursor-pointer" },
+                                    onclick: move |_| on_change_theme.call(ThemeMode::CatppuccinMacchiato),
+                                    div { class: "theme-card-header flex items-center justify-between mb-3",
+                                        div { class: "flex items-center gap-2",
+                                            div { class: "w-7 h-7 rounded-lg bg-[#24273a] border border-[#363a4f] flex items-center justify-center text-[#c6a0f6]",
+                                                IconSparkles { size: "14" }
+                                            }
+                                            span { class: "text-sm font-bold text-[var(--text-primary)]", "Catppuccin Macchiato" }
+                                        }
+                                        if current_theme == ThemeMode::CatppuccinMacchiato {
+                                            span { class: "px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-[var(--text-primary)] text-[var(--bg-app)]", "Aktif" }
+                                        }
+                                    }
+                                    p { class: "text-xs text-[var(--text-secondary)] leading-relaxed mb-4",
+                                        "Varian gelap kontras menengah bernuansa espresso kaya dengan aksen lavender mauve yang memikat."
+                                    }
+                                    div { class: "theme-swatch-bar flex items-center gap-1.5 p-2 rounded-lg bg-[#1e2030] border border-[#363a4f]",
+                                        div { class: "w-4 h-4 rounded bg-[#1e2030] border border-[#494d64]", title: "Latar Belakang" }
+                                        div { class: "w-4 h-4 rounded bg-[#24273a] border border-[#494d64]", title: "Permukaan Panel" }
+                                        div { class: "w-4 h-4 rounded bg-[#363a4f]", title: "Border Tipis" }
+                                        div { class: "w-4 h-4 rounded bg-[#c6a0f6]", title: "Aksen Mauve" }
+                                        div { class: "w-4 h-4 rounded bg-[#cad3f5]", title: "Teks Utama" }
+                                        span { class: "text-[11px] text-[#8087a2] ml-auto font-mono", "#1E2030" }
+                                    }
+                                }
+
+                                // 4. Catppuccin Mocha (Dark - High Contrast)
+                                div {
+                                    class: if current_theme == ThemeMode::CatppuccinMocha { "theme-card active cursor-pointer" } else { "theme-card cursor-pointer" },
+                                    onclick: move |_| on_change_theme.call(ThemeMode::CatppuccinMocha),
+                                    div { class: "theme-card-header flex items-center justify-between mb-3",
+                                        div { class: "flex items-center gap-2",
+                                            div { class: "w-7 h-7 rounded-lg bg-[#1e1e2e] border border-[#313244] flex items-center justify-center text-[#cba6f7]",
+                                                IconSparkles { size: "14" }
+                                            }
+                                            span { class: "text-sm font-bold text-[var(--text-primary)]", "Catppuccin Mocha" }
+                                        }
+                                        if current_theme == ThemeMode::CatppuccinMocha {
+                                            span { class: "px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-[var(--text-primary)] text-[var(--bg-app)]", "Aktif" }
+                                        }
+                                    }
+                                    p { class: "text-xs text-[var(--text-secondary)] leading-relaxed mb-4",
+                                        "Varian gelap terpopuler Catppuccin dengan kontras paling tajam, kedalaman malam pekat, dan aksen lavender."
+                                    }
+                                    div { class: "theme-swatch-bar flex items-center gap-1.5 p-2 rounded-lg bg-[#181825] border border-[#313244]",
+                                        div { class: "w-4 h-4 rounded bg-[#181825] border border-[#45475a]", title: "Latar Belakang" }
+                                        div { class: "w-4 h-4 rounded bg-[#1e1e2e] border border-[#45475a]", title: "Permukaan Panel" }
+                                        div { class: "w-4 h-4 rounded bg-[#313244]", title: "Border Tipis" }
+                                        div { class: "w-4 h-4 rounded bg-[#cba6f7]", title: "Aksen Mauve" }
+                                        div { class: "w-4 h-4 rounded bg-[#cdd6f4]", title: "Teks Utama" }
+                                        span { class: "text-[11px] text-[#7f849c] ml-auto font-mono", "#181825" }
+                                    }
+                                }
+                            }
                         }
                     }
                 },
