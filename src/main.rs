@@ -1,8 +1,11 @@
 use dioxus::prelude::*;
 
+mod audio;
 mod components;
 mod model;
 
+use audio::{load_sound_enabled, play_sound, save_sound_enabled, sleep_ms, SoundEffect};
+use components::toast::{ToastContainer, ToastItem, ToastType};
 use components::analytics::AnalyticsView;
 use components::bottom_nav::{BottomNavBar, NavTab};
 use components::budget::BudgetView;
@@ -164,9 +167,41 @@ pub fn App() -> Element {
     // State dialog konfirmasi hapus data
     let mut pending_delete = use_signal(|| None::<PendingDelete>);
 
+    // State preferensi efek suara mikro (disinkronkan dengan LocalStorage)
+    let mut sound_enabled = use_signal(load_sound_enabled);
+
+    // State notifikasi mengambang (Toasts)
+    let mut toasts = use_signal(Vec::<ToastItem>::new);
+
+    // Helper pemicu toast notifikasi & suara mikro
+    let mut trigger_toast = move |msg: String, toast_type: ToastType| {
+        let tid = js_sys::Date::now() as u64;
+        toasts.write().push(ToastItem {
+            id: tid,
+            message: msg,
+            toast_type,
+        });
+
+        let sfx = match toast_type {
+            ToastType::Success => SoundEffect::Success,
+            ToastType::Warning | ToastType::Error => SoundEffect::Warning,
+            ToastType::Info => SoundEffect::Info,
+        };
+        play_sound(sfx, *sound_enabled.read());
+
+        spawn(async move {
+            sleep_ms(3200).await;
+            let mut list = toasts.write();
+            if let Some(pos) = list.iter().position(|t| t.id == tid) {
+                list.remove(pos);
+            }
+        });
+    };
+
     // Handler penyimpanan transaksi (menambah baru atau memperbarui hasil edit)
     let handle_save = move |saved_trx: Transaction| {
         let mut list = transactions.write();
+        let is_edit = list.iter().any(|t| t.id == saved_trx.id);
         if let Some(pos) = list.iter().position(|t| t.id == saved_trx.id) {
             list[pos] = saved_trx;
         } else {
@@ -175,14 +210,21 @@ pub fn App() -> Element {
         save_transactions(&list);
         editing_trx.set(None);
         is_modal_open.set(false);
+        if is_edit {
+            trigger_toast("Perubahan transaksi berhasil diperbarui".to_string(), ToastType::Success);
+        } else {
+            trigger_toast("Transaksi baru berhasil dicatat".to_string(), ToastType::Success);
+        }
     };
 
     // Handler penambahan sumber dana baru
     let handle_save_wallet = move |new_w: Wallet| {
+        let name = new_w.name.clone();
         let mut list = wallets.write();
         list.push(new_w);
         save_wallets(&list);
         is_wallet_modal_open.set(false);
+        trigger_toast(format!("Sumber dana \"{}\" berhasil ditambahkan", name), ToastType::Success);
     };
 
     // Handler penambahan kategori kustom baru
@@ -191,12 +233,14 @@ pub fn App() -> Element {
         match trx_t {
             TransactionType::Expense => {
                 if !cats.expense.contains(&cat_name) {
-                    cats.expense.push(cat_name);
+                    cats.expense.push(cat_name.clone());
+                    trigger_toast(format!("Kategori pengeluaran \"{}\" berhasil ditambahkan", cat_name), ToastType::Info);
                 }
             }
             TransactionType::Income => {
                 if !cats.income.contains(&cat_name) {
-                    cats.income.push(cat_name);
+                    cats.income.push(cat_name.clone());
+                    trigger_toast(format!("Kategori pemasukan \"{}\" berhasil ditambahkan", cat_name), ToastType::Info);
                 }
             }
             TransactionType::Transfer => {}
@@ -336,6 +380,10 @@ pub fn App() -> Element {
                                     let next = !*is_private.read();
                                     is_private.set(next);
                                     save_privacy_mode(next);
+                                    trigger_toast(
+                                        if next { "Mode Privasi Aktif (Nominal disamarkan)".to_string() } else { "Mode Privasi Nonaktif (Nominal ditampilkan)".to_string() },
+                                        ToastType::Info,
+                                    );
                                 },
                                 if *is_private.read() {
                                     IconEyeOff { size: "14" }
@@ -353,6 +401,7 @@ pub fn App() -> Element {
                                 on_change_theme: move |new_theme| {
                                     theme.set(new_theme);
                                     save_theme(new_theme);
+                                    trigger_toast(format!("Tema diubah ke {}", new_theme.as_str()), ToastType::Info);
                                 },
                                 align_right: true,
                                 compact_mobile: true,
@@ -384,6 +433,10 @@ pub fn App() -> Element {
                                         let next = !*is_private.read();
                                         is_private.set(next);
                                         save_privacy_mode(next);
+                                        trigger_toast(
+                                            if next { "Mode Privasi Aktif (Nominal disamarkan)".to_string() } else { "Mode Privasi Nonaktif (Nominal ditampilkan)".to_string() },
+                                            ToastType::Info,
+                                        );
                                     },
                                     on_go_to_history: move |_| active_tab.set(NavTab::History),
                                     on_select_trx: move |trx| selected_detail_trx.set(Some(trx)),
@@ -494,25 +547,41 @@ pub fn App() -> Element {
                                     savings_logs: savings_logs.read().clone(),
                                     gemini_api_key: gemini_api_key.read().clone(),
                                     current_theme: *theme.read(),
+                                    sound_enabled: *sound_enabled.read(),
+                                    on_toggle_sound: move |_| {
+                                        let next = !*sound_enabled.read();
+                                        sound_enabled.set(next);
+                                        save_sound_enabled(next);
+                                        play_sound(SoundEffect::Info, next);
+                                        trigger_toast(
+                                            if next { "Efek suara mikro diaktifkan".to_string() } else { "Efek suara mikro dinonaktifkan".to_string() },
+                                            ToastType::Info,
+                                        );
+                                    },
                                     on_change_theme: move |new_theme: ThemeMode| {
                                         theme.set(new_theme);
                                         save_theme(new_theme);
+                                        trigger_toast(format!("Tema diubah ke {}", new_theme.as_str()), ToastType::Info);
                                     },
                                     on_update_wallets: move |new_w_list: Vec<Wallet>| {
                                         save_wallets(&new_w_list);
                                         wallets.set(new_w_list);
+                                        trigger_toast("Daftar sumber dana diperbarui".to_string(), ToastType::Success);
                                     },
                                     on_update_categories: move |new_cats: UserCategories| {
                                         save_categories(&new_cats);
                                         categories.set(new_cats);
+                                        trigger_toast("Daftar kategori transaksi diperbarui".to_string(), ToastType::Success);
                                     },
                                     on_save_api_key: move |key: String| {
                                         save_gemini_api_key(Some(&key));
                                         gemini_api_key.set(Some(key));
+                                        trigger_toast("Google Gemini API Key berhasil disimpan & diverifikasi".to_string(), ToastType::Success);
                                     },
                                     on_delete_api_key: move |_| {
                                         save_gemini_api_key(None);
                                         gemini_api_key.set(None);
+                                        trigger_toast("Google Gemini API Key telah dihapus".to_string(), ToastType::Info);
                                     },
                                     on_request_delete_wallet: move |w_name: String| {
                                         pending_delete.set(Some(PendingDelete::Wallet(w_name)));
@@ -548,6 +617,7 @@ pub fn App() -> Element {
                                         savings_goals.set(new_goals);
                                         save_savings_logs(&new_logs);
                                         savings_logs.set(new_logs);
+                                        trigger_toast("Data cadangan berhasil dipulihkan".to_string(), ToastType::Success);
                                     },
                                     on_request_reset_all_data: move |_| {
                                         pending_delete.set(Some(PendingDelete::AllData));
@@ -610,6 +680,7 @@ pub fn App() -> Element {
                             save_profile(&current);
                             profile.set(Some(current));
                             is_profile_modal_open.set(false);
+                            trigger_toast("Nama profil berhasil diperbarui".to_string(), ToastType::Success);
                         },
                     }
                 }
@@ -645,6 +716,8 @@ pub fn App() -> Element {
                                     transactions.write().retain(|t| t.id != id);
                                     save_transactions(&transactions.read());
                                     pending_delete.set(None);
+                                    play_sound(SoundEffect::Delete, *sound_enabled.read());
+                                    trigger_toast("Catatan transaksi telah dihapus".to_string(), ToastType::Info);
                                 }
                             },
                             on_cancel: move |_| pending_delete.set(None),
@@ -661,6 +734,8 @@ pub fn App() -> Element {
                                     wallets.write().retain(|w| w.name != name);
                                     save_wallets(&wallets.read());
                                     pending_delete.set(None);
+                                    play_sound(SoundEffect::Delete, *sound_enabled.read());
+                                    trigger_toast(format!("Sumber dana \"{}\" telah dihapus", name), ToastType::Info);
                                 }
                             },
                             on_cancel: move |_| pending_delete.set(None),
@@ -682,6 +757,8 @@ pub fn App() -> Element {
                                     }
                                     save_categories(&cats);
                                     pending_delete.set(None);
+                                    play_sound(SoundEffect::Delete, *sound_enabled.read());
+                                    trigger_toast(format!("Kategori \"{}\" telah dihapus", cat_name), ToastType::Info);
                                 }
                             },
                             on_cancel: move |_| pending_delete.set(None),
@@ -705,11 +782,21 @@ pub fn App() -> Element {
                                 save_savings_logs(&[]);
                                 savings_logs.set(vec![]);
                                 pending_delete.set(None);
+                                play_sound(SoundEffect::Delete, *sound_enabled.read());
+                                trigger_toast("Semua data CatatMoney telah direset".to_string(), ToastType::Warning);
                             },
                             on_cancel: move |_| pending_delete.set(None),
                         }
                     },
                 }
+            }
+
+            // Komponen Notifikasi Mengambang Minimalis (Toast Feedback)
+            ToastContainer {
+                toasts: toasts.read().clone(),
+                on_dismiss: move |id| {
+                    toasts.write().retain(|t| t.id != id);
+                },
             }
         }
     }

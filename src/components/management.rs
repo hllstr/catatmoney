@@ -3,7 +3,7 @@ use crate::components::icons::{
     CategoryIcon, IconAlertTriangle, IconArrowDownRight, IconArrowRight, IconArrowUpRight, IconBanknote,
     IconCheck, IconCreditCard, IconDownload, IconEdit, IconEye, IconEyeOff, IconKey, IconLandmark,
     IconMoon, IconPlus, IconSliders, IconSmartphone, IconSparkles, IconSun, IconTrash, IconUpload,
-    IconWallet, IconX, WalletIcon,
+    IconVolume2, IconVolumeX, IconWallet, IconX, WalletIcon,
 };
 #[allow(unused_imports)]
 use crate::model::{
@@ -33,6 +33,8 @@ pub fn ManagementView(
     savings_logs: Vec<SavingsLogEntry>,
     gemini_api_key: Option<String>,
     current_theme: ThemeMode,
+    #[props(default = true)] sound_enabled: bool,
+    #[props(default = None)] on_toggle_sound: Option<EventHandler<()>>,
     on_change_theme: EventHandler<ThemeMode>,
     on_update_wallets: EventHandler<Vec<Wallet>>,
     on_update_categories: EventHandler<UserCategories>,
@@ -894,6 +896,41 @@ pub fn ManagementView(
                                         div { class: "w-4 h-4 rounded bg-[#cba6f7]", title: "Aksen Mauve" }
                                         div { class: "w-4 h-4 rounded bg-[#cdd6f4]", title: "Teks Utama" }
                                         span { class: "text-[11px] text-[#7f849c] ml-auto font-mono", "#181825" }
+                                    }
+                                }
+                            }
+                        }
+
+                        // Preferensi Efek Suara Mikro (Audio Feedback)
+                        div { class: "pt-4 border-t border-[var(--border-subtle)] space-y-3",
+                            div { class: "flex items-center gap-2",
+                                span { class: "text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wider", "Interaksi & Audio Feedback" }
+                                span { class: "h-px flex-1 bg-[var(--border-subtle)]" }
+                            }
+
+                            div { class: "p-4 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface-subtle)] flex items-center justify-between gap-4",
+                                div { class: "flex items-center gap-3",
+                                    div { class: "w-8 h-8 rounded-lg bg-[var(--bg-surface-elevated)] border border-[var(--border-subtle)] flex items-center justify-center text-[var(--accent)] shrink-0",
+                                        if sound_enabled {
+                                            IconVolume2 { size: "16" }
+                                        } else {
+                                            IconVolumeX { size: "16" }
+                                        }
+                                    }
+                                    div {
+                                        h4 { class: "text-xs font-bold text-[var(--text-primary)]", "Efek Suara Mikro (Audio Feedback)" }
+                                        p { class: "text-[11px] text-[var(--text-muted)] mt-0.5",
+                                            "Memutar nada lembut saat transaksi dicatat, diedit, atau dihapus."
+                                        }
+                                    }
+                                }
+
+                                if let Some(on_toggle) = on_toggle_sound {
+                                    button {
+                                        r#type: "button",
+                                        class: if sound_enabled { "px-3 py-1.5 rounded-full text-xs font-bold bg-[var(--accent)] text-[var(--accent-contrast)] hover:opacity-90 transition-all cursor-pointer" } else { "px-3 py-1.5 rounded-full text-xs font-bold bg-[var(--bg-app)] border border-[var(--border-subtle)] text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-all cursor-pointer" },
+                                        onclick: move |_| on_toggle.call(()),
+                                        if sound_enabled { "Aktif" } else { "Mati" }
                                     }
                                 }
                             }

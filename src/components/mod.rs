@@ -18,3 +18,4 @@ pub mod budget;
 pub mod savings;
 pub mod ai_copilot;
 pub mod theme_dropdown;
+pub mod toast;

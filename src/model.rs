@@ -91,6 +91,22 @@ pub enum ThemeMode {
     CatppuccinMocha,
 }
 
+impl ThemeMode {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Self::Dark => "Obsidian Dark",
+            Self::Light => "Clean Light",
+            Self::TokyoNight => "Tokyo Night",
+            Self::RosePine => "Rosé Pine",
+            Self::SakuraBlossom => "Sakura Blossom",
+            Self::CatppuccinLatte => "Catppuccin Latte",
+            Self::CatppuccinFrappe => "Catppuccin Frappé",
+            Self::CatppuccinMacchiato => "Catppuccin Macchiato",
+            Self::CatppuccinMocha => "Catppuccin Mocha",
+        }
+    }
+}
+
 pub const EXPENSE_CATEGORIES: &[&str] = &[
     "Makanan & Minuman",
     "Transportasi",
