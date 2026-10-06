@@ -1,4 +1,5 @@
 use dioxus::prelude::*;
+use crate::audio::sleep_ms;
 use crate::components::icons::{
     CategoryIcon, IconArrowDownRight, IconArrowLeftRight, IconArrowUpRight, IconCalendar, IconClock,
     IconEdit, IconEye, IconFileText, IconPaperclip, IconTrash, IconWallet, IconX,
@@ -19,6 +20,20 @@ pub fn DetailModal(
     };
 
     let mut show_full_preview = use_signal(|| true);
+    let mut is_closing = use_signal(|| false);
+
+    let handle_close = move || {
+        if *is_closing.read() {
+            return;
+        }
+        is_closing.set(true);
+        let on_close = on_close.clone();
+        spawn(async move {
+            sleep_ms(220).await;
+            is_closing.set(false);
+            on_close.call(());
+        });
+    };
 
     let is_income = trx.transaction_type == TransactionType::Income;
     let is_transfer = trx.transaction_type == TransactionType::Transfer;
@@ -36,11 +51,18 @@ pub fn DetailModal(
         _ => "Rp 0 (Gratis)".to_string(),
     };
 
+    let closing_class = if *is_closing.read() { "modal-closing" } else { "" };
+
     rsx! {
         // Backdrop overlay
-        div { class: "modal-backdrop", onclick: move |_| on_close.call(()),
+        div {
+            class: "modal-backdrop {closing_class}",
+            onclick: {
+                let mut close_fn = handle_close.clone();
+                move |_| close_fn()
+            },
             div {
-                class: "modal-dialog",
+                class: "modal-dialog {closing_class}",
                 onclick: move |e| e.stop_propagation(),
 
                 // Header Modal
@@ -52,7 +74,10 @@ pub fn DetailModal(
                     button {
                         r#type: "button",
                         class: "btn-icon-close",
-                        onclick: move |_| on_close.call(()),
+                        onclick: {
+                            let mut close_fn = handle_close.clone();
+                            move |_| close_fn()
+                        },
                         IconX { size: "18" }
                     }
                 }

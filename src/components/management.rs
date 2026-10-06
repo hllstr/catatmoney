@@ -1,10 +1,12 @@
 use dioxus::prelude::*;
+use crate::components::category_modal::CategoryModal;
 use crate::components::icons::{
-    CategoryIcon, IconAlertTriangle, IconArrowDownRight, IconArrowRight, IconArrowUpRight, IconBanknote,
-    IconCheck, IconCreditCard, IconDownload, IconEdit, IconEye, IconEyeOff, IconKey, IconLandmark,
-    IconMoon, IconPlus, IconSliders, IconSmartphone, IconSparkles, IconSun, IconTrash, IconUpload,
-    IconVolume2, IconVolumeX, IconWallet, IconX, WalletIcon,
+    CategoryIcon, IconAlertTriangle, IconArrowDownRight, IconArrowRight, IconArrowUpRight,
+    IconCheck, IconDownload, IconEdit, IconEye, IconEyeOff, IconKey,
+    IconMoon, IconPlus, IconSliders, IconSparkles, IconSun, IconTrash, IconUpload,
+    IconVolume2, IconVolumeX, IconWallet, WalletIcon,
 };
+use crate::components::wallet_modal::WalletModal;
 #[allow(unused_imports)]
 use crate::model::{
     create_backup, format_idr, generate_id, get_today_date, parse_input_idr,
@@ -51,19 +53,12 @@ pub fn ManagementView(
     let mut gemini_key_input = use_signal(String::new);
     let mut show_gemini_key = use_signal(|| false);
 
-    // State form Sumber Dana
-    let mut is_adding_wallet = use_signal(|| false);
-    let mut editing_wallet_id = use_signal(|| None::<String>);
-    let mut wallet_name_input = use_signal(String::new);
-    let mut wallet_type_input = use_signal(|| WalletType::Bank);
-    let mut wallet_balance_input = use_signal(|| 0.0);
-    let mut wallet_balance_display = use_signal(|| "Rp 0".to_string());
+    // State modal Sumber Dana: None = tertutup, Some(None) = modal tambah baru, Some(Some(wallet)) = modal edit
+    let mut active_wallet_modal = use_signal(|| None::<Option<Wallet>>);
     let mut wallet_error = use_signal(|| None::<String>);
 
-    // State form Kategori
-    let mut is_adding_cat = use_signal(|| false);
-    let mut editing_cat_orig = use_signal(|| None::<String>);
-    let mut cat_name_input = use_signal(String::new);
+    // State modal Kategori: None = tertutup, Some((is_expense, initial_name))
+    let mut active_cat_modal = use_signal(|| None::<(bool, Option<String>)>);
     let mut cat_error = use_signal(|| None::<String>);
 
     // State pesan Backup & Restore
@@ -92,8 +87,7 @@ pub fn ManagementView(
                     class: if *active_subtab.read() == ManageTab::Wallets { "manage-tab-btn active" } else { "manage-tab-btn" },
                     onclick: move |_| {
                         active_subtab.set(ManageTab::Wallets);
-                        is_adding_wallet.set(false);
-                        editing_wallet_id.set(None);
+                        active_wallet_modal.set(None);
                         wallet_error.set(None);
                     },
                     IconWallet { size: "15" }
@@ -105,8 +99,7 @@ pub fn ManagementView(
                     class: if *active_subtab.read() == ManageTab::ExpenseCategories { "manage-tab-btn active" } else { "manage-tab-btn" },
                     onclick: move |_| {
                         active_subtab.set(ManageTab::ExpenseCategories);
-                        is_adding_cat.set(false);
-                        editing_cat_orig.set(None);
+                        active_cat_modal.set(None);
                         cat_error.set(None);
                     },
                     IconArrowDownRight { size: "15" }
@@ -118,8 +111,7 @@ pub fn ManagementView(
                     class: if *active_subtab.read() == ManageTab::IncomeCategories { "manage-tab-btn active" } else { "manage-tab-btn" },
                     onclick: move |_| {
                         active_subtab.set(ManageTab::IncomeCategories);
-                        is_adding_cat.set(false);
-                        editing_cat_orig.set(None);
+                        active_cat_modal.set(None);
                         cat_error.set(None);
                     },
                     IconArrowUpRight { size: "15" }
@@ -131,9 +123,8 @@ pub fn ManagementView(
                     class: if *active_subtab.read() == ManageTab::Theme { "manage-tab-btn active" } else { "manage-tab-btn" },
                     onclick: move |_| {
                         active_subtab.set(ManageTab::Theme);
-                        is_adding_wallet.set(false);
-                        editing_wallet_id.set(None);
-                        is_adding_cat.set(false);
+                        active_wallet_modal.set(None);
+                        active_cat_modal.set(None);
                     },
                     match current_theme {
                         ThemeMode::Dark => rsx! { IconMoon { size: "15" } },
@@ -148,9 +139,8 @@ pub fn ManagementView(
                     class: if *active_subtab.read() == ManageTab::GeminiAi { "manage-tab-btn active" } else { "manage-tab-btn" },
                     onclick: move |_| {
                         active_subtab.set(ManageTab::GeminiAi);
-                        is_adding_wallet.set(false);
-                        editing_wallet_id.set(None);
-                        is_adding_cat.set(false);
+                        active_wallet_modal.set(None);
+                        active_cat_modal.set(None);
                     },
                     IconSparkles { size: "15" }
                     span { class: "tab-label-full", "Integrasi Gemini AI" }
@@ -161,9 +151,8 @@ pub fn ManagementView(
                     class: if *active_subtab.read() == ManageTab::BackupRestore { "manage-tab-btn active" } else { "manage-tab-btn" },
                     onclick: move |_| {
                         active_subtab.set(ManageTab::BackupRestore);
-                        is_adding_wallet.set(false);
-                        editing_wallet_id.set(None);
-                        is_adding_cat.set(false);
+                        active_wallet_modal.set(None);
+                        active_cat_modal.set(None);
                         restore_error_msg.set(None);
                     },
                     IconDownload { size: "15" }
@@ -182,21 +171,15 @@ pub fn ManagementView(
                                 h3 { class: "text-sm font-bold", "Daftar Rekening & Pos Keuangan" }
                                 p { class: "text-xs text-muted", "Sumber dana digunakan sebagai asal/tujuan transaksi" }
                             }
-                            if !*is_adding_wallet.read() && editing_wallet_id.read().is_none() {
-                                button {
-                                    r#type: "button",
-                                    class: "btn-primary text-xs py-1.5 px-3 flex items-center gap-1.5 shrink-0 whitespace-nowrap",
-                                    onclick: move |_| {
-                                        wallet_name_input.set(String::new());
-                                        wallet_type_input.set(WalletType::Bank);
-                                        wallet_balance_input.set(0.0);
-                                        wallet_balance_display.set("Rp 0".to_string());
-                                        editing_wallet_id.set(None);
-                                        is_adding_wallet.set(true);
-                                    },
-                                    IconPlus { size: "14" }
-                                    "Tambah Sumber Dana"
-                                }
+                            button {
+                                r#type: "button",
+                                class: "btn-primary text-xs py-1.5 px-3 flex items-center gap-1.5 shrink-0 whitespace-nowrap",
+                                onclick: move |_| {
+                                    wallet_error.set(None);
+                                    active_wallet_modal.set(Some(None));
+                                },
+                                IconPlus { size: "14" }
+                                "Tambah Sumber Dana"
                             }
                         }
 
@@ -204,170 +187,15 @@ pub fn ManagementView(
                             div { class: "form-error mb-4", "{err}" }
                         }
 
-                        // Form Tambah / Edit Sumber Dana (TANPA NOMINAL UANG)
-                        if *is_adding_wallet.read() || editing_wallet_id.read().is_some() {
-                            div { class: "manage-form-card mb-5 p-4 rounded-xl border border-[var(--border-color)] bg-[var(--bg-surface-subtle)]",
-                                div { class: "flex items-center justify-between mb-3 pb-2 border-b border-[var(--border-subtle)]",
-                                    h4 { class: "text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)]",
-                                        if editing_wallet_id.read().is_some() { "Edit Sumber Dana" } else { "Pendaftaran Sumber Dana Baru" }
-                                    }
-                                    button {
-                                        r#type: "button",
-                                        class: "btn-icon-close",
-                                        onclick: move |_| {
-                                            is_adding_wallet.set(false);
-                                            editing_wallet_id.set(None);
-                                        },
-                                        IconX { size: "15" }
-                                    }
-                                }
-
-                                form {
-                                    onsubmit: {
-                                        let wallets_list = wallets.clone();
-                                        move |e: FormEvent| {
-                                            e.prevent_default();
-                                            let name = wallet_name_input.read().trim().to_string();
-                                            if name.is_empty() {
-                                                wallet_error.set(Some("Nama sumber dana tidak boleh kosong.".to_string()));
-                                                return;
-                                            }
-
-                                            let mut updated = wallets_list.clone();
-                                            if let Some(ref edit_id) = *editing_wallet_id.read() {
-                                                if let Some(w) = updated.iter_mut().find(|w| &w.id == edit_id) {
-                                                    w.name = name;
-                                                    w.wallet_type = *wallet_type_input.read();
-                                                    w.initial_balance = *wallet_balance_input.read();
-                                                }
-                                            } else {
-                                                let new_w = Wallet {
-                                                    id: generate_id(),
-                                                    name,
-                                                    wallet_type: *wallet_type_input.read(),
-                                                    initial_balance: *wallet_balance_input.read(),
-                                                };
-                                                updated.push(new_w);
-                                            }
-
-                                            on_update_wallets.call(updated);
-                                            is_adding_wallet.set(false);
-                                            editing_wallet_id.set(None);
-                                            wallet_name_input.set(String::new());
-                                            wallet_balance_input.set(0.0);
-                                            wallet_balance_display.set("Rp 0".to_string());
-                                            wallet_error.set(None);
-                                        }
-                                    },
-
-                                    div { class: "field-group mb-3",
-                                        label { class: "field-label", "Nama Sumber Dana / Akun" }
-                                        input {
-                                            r#type: "text",
-                                            class: "field-input",
-                                            placeholder: "Misal: Bank Mandiri, DANA, Brankas Tunai",
-                                            value: "{wallet_name_input}",
-                                            oninput: move |e| wallet_name_input.set(e.value()),
-                                        }
-                                    }
-
-                                    div { class: "field-group mb-4",
-                                        label { class: "field-label", "Tipe Akun" }
-                                        div { class: "wallet-type-grid",
-                                            button {
-                                                r#type: "button",
-                                                class: if *wallet_type_input.read() == WalletType::Bank { "wallet-type-select-btn active" } else { "wallet-type-select-btn" },
-                                                onclick: move |_| wallet_type_input.set(WalletType::Bank),
-                                                IconLandmark { size: "15" }
-                                                span { "Rekening Bank" }
-                                            }
-                                            button {
-                                                r#type: "button",
-                                                class: if *wallet_type_input.read() == WalletType::EWallet { "wallet-type-select-btn active" } else { "wallet-type-select-btn" },
-                                                onclick: move |_| wallet_type_input.set(WalletType::EWallet),
-                                                IconSmartphone { size: "15" }
-                                                span { "E-Wallet" }
-                                            }
-                                            button {
-                                                r#type: "button",
-                                                class: if *wallet_type_input.read() == WalletType::Cash { "wallet-type-select-btn active" } else { "wallet-type-select-btn" },
-                                                onclick: move |_| wallet_type_input.set(WalletType::Cash),
-                                                IconBanknote { size: "15" }
-                                                span { "Uang Tunai" }
-                                            }
-                                            button {
-                                                r#type: "button",
-                                                class: if *wallet_type_input.read() == WalletType::CreditCard { "wallet-type-select-btn active" } else { "wallet-type-select-btn" },
-                                                onclick: move |_| wallet_type_input.set(WalletType::CreditCard),
-                                                IconCreditCard { size: "15" }
-                                                span { "Kartu Kredit" }
-                                            }
-                                            button {
-                                                r#type: "button",
-                                                class: if *wallet_type_input.read() == WalletType::Other { "wallet-type-select-btn active" } else { "wallet-type-select-btn" },
-                                                onclick: move |_| wallet_type_input.set(WalletType::Other),
-                                                IconWallet { size: "15" }
-                                                span { "Lainnya" }
-                                            }
-                                        }
-                                    }
-
-                                    div { class: "field-group mb-4",
-                                        label { class: "field-label", "Saldo Awal Saat Ini" }
-                                        input {
-                                            r#type: "text",
-                                            class: "field-input text-sm tabular-numbers",
-                                            placeholder: "Rp 0",
-                                            value: "{wallet_balance_display}",
-                                            oninput: move |e| {
-                                                let (val, formatted) = parse_input_idr(&e.value());
-                                                wallet_balance_input.set(val);
-                                                if val == 0.0 {
-                                                    wallet_balance_display.set("Rp 0".to_string());
-                                                } else {
-                                                    wallet_balance_display.set(format!("Rp {}", formatted));
-                                                }
-                                            },
-                                        }
-                                        p { class: "text-[11px] text-[var(--text-muted)] mt-1.5",
-                                            "Saldo nyata akun ini saat pertama kali didaftarkan. Kosongkan atau biarkan Rp 0 jika belum ada saldo."
-                                        }
-                                    }
-
-                                    div { class: "flex items-center justify-end gap-2 mt-4 pt-3 border-t border-[var(--border-subtle)]",
-                                        button {
-                                            r#type: "button",
-                                            class: "btn-secondary text-xs py-1.5 px-3",
-                                            onclick: move |_| {
-                                                is_adding_wallet.set(false);
-                                                editing_wallet_id.set(None);
-                                            },
-                                            "Batal"
-                                        }
-                                        button {
-                                            r#type: "submit",
-                                            class: "btn-primary text-xs py-1.5 px-4 flex items-center gap-1.5",
-                                            IconCheck { size: "14" }
-                                            "Simpan Sumber Dana"
-                                        }
-                                    }
-                                }
-                            }
-                        }
-
                         // List Kartu Sumber Dana
                         div { class: "manage-item-grid",
                             for w in wallets.iter() {
                                 {
-                                    let id = w.id.clone();
-                                    let name = w.name.clone();
-                                    let w_type = w.wallet_type;
-                                    let w_bal = w.initial_balance;
-                                    let is_editing = editing_wallet_id.read().as_ref() == Some(&id);
+                                    let w_item = w.clone();
 
                                     rsx! {
                                         div {
-                                            class: if is_editing { "manage-item-card active-editing" } else { "manage-item-card" },
+                                            class: "manage-item-card",
                                             key: "{w.id}",
                                             div { class: "manage-item-main",
                                                 div { class: "wallet-icon-box",
@@ -385,18 +213,12 @@ pub fn ManagementView(
                                                     r#type: "button",
                                                     class: "btn-icon-subtle",
                                                     title: "Edit Sumber Dana",
-                                                    onclick: move |_| {
-                                                        wallet_name_input.set(name.clone());
-                                                        wallet_type_input.set(w_type);
-                                                        wallet_balance_input.set(w_bal);
-                                                        if w_bal == 0.0 {
-                                                            wallet_balance_display.set("Rp 0".to_string());
-                                                        } else {
-                                                            wallet_balance_display.set(format_idr(w_bal));
+                                                    onclick: {
+                                                        let item = w_item.clone();
+                                                        move |_| {
+                                                            wallet_error.set(None);
+                                                            active_wallet_modal.set(Some(Some(item.clone())));
                                                         }
-                                                        editing_wallet_id.set(Some(id.clone()));
-                                                        is_adding_wallet.set(false);
-                                                        wallet_error.set(None);
                                                     },
                                                     IconEdit { size: "14" }
                                                 }
@@ -439,19 +261,15 @@ pub fn ManagementView(
                                     h3 { class: "text-sm font-bold", "Kategori {label_kind}" }
                                     p { class: "text-xs text-muted", "Kategori yang digunakan untuk klasifikasi transaksi {label_kind}" }
                                 }
-                                if !*is_adding_cat.read() && editing_cat_orig.read().is_none() {
-                                    button {
-                                        r#type: "button",
-                                        class: "btn-primary text-xs py-1.5 px-3 flex items-center gap-1.5 shrink-0 whitespace-nowrap",
-                                        onclick: move |_| {
-                                            cat_name_input.set(String::new());
-                                            editing_cat_orig.set(None);
-                                            is_adding_cat.set(true);
-                                            cat_error.set(None);
-                                        },
-                                        IconPlus { size: "14" }
-                                        "Tambah Kategori"
-                                    }
+                                button {
+                                    r#type: "button",
+                                    class: "btn-primary text-xs py-1.5 px-3 flex items-center gap-1.5 shrink-0 whitespace-nowrap",
+                                    onclick: move |_| {
+                                        cat_error.set(None);
+                                        active_cat_modal.set(Some((is_expense, None)));
+                                    },
+                                    IconPlus { size: "14" }
+                                    "Tambah Kategori"
                                 }
                             }
 
@@ -459,105 +277,16 @@ pub fn ManagementView(
                                 div { class: "form-error mb-4", "{err}" }
                             }
 
-                            // Form Tambah / Edit Kategori
-                            if *is_adding_cat.read() || editing_cat_orig.read().is_some() {
-                                div { class: "manage-form-card mb-5 p-4 rounded-xl border border-[var(--border-color)] bg-[var(--bg-surface-subtle)]",
-                                    div { class: "flex items-center justify-between mb-3 pb-2 border-b border-[var(--border-subtle)]",
-                                        h4 { class: "text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)]",
-                                            if editing_cat_orig.read().is_some() { "Edit Kategori {label_kind}" } else { "Tambah Kategori {label_kind} Baru" }
-                                        }
-                                        button {
-                                            r#type: "button",
-                                            class: "btn-icon-close",
-                                            onclick: move |_| {
-                                                is_adding_cat.set(false);
-                                                editing_cat_orig.set(None);
-                                            },
-                                            IconX { size: "15" }
-                                        }
-                                    }
-
-                                    form {
-                                        onsubmit: {
-                                            let cats = categories.clone();
-                                            move |e: FormEvent| {
-                                                e.prevent_default();
-                                                let name = cat_name_input.read().trim().to_string();
-                                                if name.is_empty() {
-                                                    cat_error.set(Some("Nama kategori tidak boleh kosong.".to_string()));
-                                                    return;
-                                                }
-
-                                                let mut updated = cats.clone();
-                                                let target_list = if is_expense {
-                                                    &mut updated.expense
-                                                } else {
-                                                    &mut updated.income
-                                                };
-
-                                                if let Some(ref orig) = *editing_cat_orig.read() {
-                                                    if let Some(pos) = target_list.iter().position(|c| c == orig) {
-                                                        target_list[pos] = name;
-                                                    }
-                                                } else {
-                                                    if target_list.contains(&name) {
-                                                        cat_error.set(Some("Kategori dengan nama tersebut sudah ada.".to_string()));
-                                                        return;
-                                                    }
-                                                    target_list.push(name);
-                                                }
-
-                                                on_update_categories.call(updated);
-                                                is_adding_cat.set(false);
-                                                editing_cat_orig.set(None);
-                                                cat_name_input.set(String::new());
-                                                cat_error.set(None);
-                                            }
-                                        },
-
-                                        div { class: "field-group mb-4",
-                                            label { class: "field-label", "Nama Kategori" }
-                                            input {
-                                                r#type: "text",
-                                                class: "field-input",
-                                                placeholder: if is_expense { "Misal: Langganan SaaS, Pajak, Hobi" } else { "Misal: Dividen, Saham, Hibah" },
-                                                value: "{cat_name_input}",
-                                                oninput: move |e| cat_name_input.set(e.value()),
-                                            }
-                                        }
-
-                                        div { class: "flex items-center justify-end gap-2 pt-3 border-t border-[var(--border-subtle)]",
-                                            button {
-                                                r#type: "button",
-                                                class: "btn-secondary text-xs py-1.5 px-3",
-                                                onclick: move |_| {
-                                                    is_adding_cat.set(false);
-                                                    editing_cat_orig.set(None);
-                                                },
-                                                "Batal"
-                                            }
-                                            button {
-                                                r#type: "submit",
-                                                class: "btn-primary text-xs py-1.5 px-4 flex items-center gap-1.5",
-                                                IconCheck { size: "14" }
-                                                "Simpan Kategori"
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-
                             // List Kategori
                             div { class: "manage-item-grid",
                                 for cat in current_list {
                                     {
                                         let c_name = cat.clone();
-                                        let is_editing = editing_cat_orig.read().as_ref() == Some(&c_name);
                                         let box_class = if is_expense { "category-icon-box expense" } else { "category-icon-box income" };
 
                                         rsx! {
                                             div {
-                                                class: if is_editing { "manage-item-card active-editing" } else { "manage-item-card" },
+                                                class: "manage-item-card",
                                                 key: "{cat}",
                                                 div { class: "manage-item-main",
                                                     div { class: "{box_class}",
@@ -576,10 +305,8 @@ pub fn ManagementView(
                                                         onclick: {
                                                             let cn = c_name.clone();
                                                             move |_| {
-                                                                cat_name_input.set(cn.clone());
-                                                                editing_cat_orig.set(Some(cn.clone()));
-                                                                is_adding_cat.set(false);
                                                                 cat_error.set(None);
+                                                                active_cat_modal.set(Some((is_expense, Some(cn.clone()))));
                                                             }
                                                         },
                                                         IconEdit { size: "14" }
@@ -1228,6 +955,60 @@ pub fn ManagementView(
                             }
                         }
                     }
+                }
+            }
+
+            // Modal Popup Tambah / Edit Sumber Dana
+            if let Some(target_wallet) = active_wallet_modal.read().clone() {
+                WalletModal {
+                    is_open: true,
+                    initial_wallet: target_wallet,
+                    on_close: move |_| active_wallet_modal.set(None),
+                    on_save: {
+                        let wallets_list = wallets.clone();
+                        move |saved_w: Wallet| {
+                            let mut updated = wallets_list.clone();
+                            if let Some(pos) = updated.iter().position(|w| w.id == saved_w.id) {
+                                updated[pos] = saved_w;
+                            } else {
+                                updated.push(saved_w);
+                            }
+                            on_update_wallets.call(updated);
+                        }
+                    },
+                }
+            }
+
+            // Modal Popup Tambah / Edit Kategori Pengeluaran & Pemasukan
+            if let Some((is_expense, initial_name)) = active_cat_modal.read().clone() {
+                CategoryModal {
+                    is_open: true,
+                    is_expense,
+                    initial_name: initial_name.clone(),
+                    existing_categories: if is_expense { categories.expense.clone() } else { categories.income.clone() },
+                    on_close: move |_| active_cat_modal.set(None),
+                    on_save: {
+                        let cats = categories.clone();
+                        let init_orig = initial_name.clone();
+                        move |new_name: String| {
+                            let mut updated = cats.clone();
+                            let target_list = if is_expense {
+                                &mut updated.expense
+                            } else {
+                                &mut updated.income
+                            };
+                            if let Some(ref orig) = init_orig {
+                                if let Some(pos) = target_list.iter().position(|c| c == orig) {
+                                    target_list[pos] = new_name;
+                                }
+                            } else {
+                                if !target_list.contains(&new_name) {
+                                    target_list.push(new_name);
+                                }
+                            }
+                            on_update_categories.call(updated);
+                        }
+                    },
                 }
             }
         }

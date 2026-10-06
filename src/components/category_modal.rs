@@ -1,12 +1,13 @@
 use dioxus::prelude::*;
 use crate::audio::sleep_ms;
-use crate::components::icons::{IconCheck, IconShield, IconUser, IconX};
-use crate::model::UserProfile;
+use crate::components::icons::{IconCheck, IconTag, IconX};
 
 #[component]
-pub fn ProfileModal(
+pub fn CategoryModal(
     is_open: bool,
-    current_profile: Option<UserProfile>,
+    is_expense: bool,
+    #[props(default = None)] initial_name: Option<String>,
+    #[props(default = Vec::new())] existing_categories: Vec<String>,
     on_close: EventHandler<()>,
     on_save: EventHandler<String>,
 ) -> Element {
@@ -14,8 +15,11 @@ pub fn ProfileModal(
         return rsx! {};
     }
 
-    let initial_name = current_profile.as_ref().map(|p| p.name.clone()).unwrap_or_default();
-    let mut name = use_signal(move || initial_name.clone());
+    let is_edit = initial_name.is_some();
+    let label_kind = if is_expense { "Pengeluaran" } else { "Pemasukan" };
+    let initial_val = initial_name.clone().unwrap_or_default();
+    let initial_val_check = initial_val.clone();
+    let mut name = use_signal(move || initial_val.clone());
     let mut error_msg = use_signal(|| None::<String>);
     let mut is_closing = use_signal(|| false);
 
@@ -35,13 +39,27 @@ pub fn ProfileModal(
     let handle_submit = {
         let on_save = on_save.clone();
         let on_close = on_close.clone();
+        let existing_categories = existing_categories.clone();
         move |evt: FormEvent| {
             evt.prevent_default();
             let trimmed = name.read().trim().to_string();
             if trimmed.is_empty() {
-                error_msg.set(Some("Nama panggilan tidak boleh kosong.".to_string()));
+                error_msg.set(Some("Nama kategori tidak boleh kosong.".to_string()));
                 return;
             }
+
+            let is_duplicate = if is_edit {
+                !trimmed.eq_ignore_ascii_case(&initial_val_check)
+                    && existing_categories.iter().any(|c| c.eq_ignore_ascii_case(&trimmed))
+            } else {
+                existing_categories.iter().any(|c| c.eq_ignore_ascii_case(&trimmed))
+            };
+
+            if is_duplicate {
+                error_msg.set(Some("Kategori dengan nama tersebut sudah ada.".to_string()));
+                return;
+            }
+
             error_msg.set(None);
             if *is_closing.read() {
                 return;
@@ -58,6 +76,12 @@ pub fn ProfileModal(
         }
     };
 
+    let modal_title = if is_edit {
+        format!("Edit Kategori {}", label_kind)
+    } else {
+        format!("Tambah Kategori {} Baru", label_kind)
+    };
+    let modal_subtitle = format!("Kategori yang digunakan untuk klasifikasi transaksi {}", label_kind.to_lowercase());
     let closing_class = if *is_closing.read() { "modal-closing" } else { "" };
 
     rsx! {
@@ -74,10 +98,12 @@ pub fn ProfileModal(
                 div { class: "modal-header",
                     div {
                         h2 { class: "modal-title flex items-center gap-2",
-                            IconUser { size: "18" }
-                            "Ubah Profil Pengguna"
+                            IconTag { size: "18" }
+                            "{modal_title}"
                         }
-                        p { class: "modal-subtitle", "Perbarui nama panggilan untuk personalisasi akun CatatMoney" }
+                        p { class: "modal-subtitle",
+                            "{modal_subtitle}"
+                        }
                     }
                     button {
                         r#type: "button",
@@ -98,29 +124,17 @@ pub fn ProfileModal(
 
                 form { onsubmit: handle_submit,
                     div { class: "field-group mb-4",
-                        label { class: "field-label", "Nama Panggilan" }
+                        label { class: "field-label", "Nama Kategori" }
                         input {
                             class: "field-input",
                             r#type: "text",
-                            placeholder: "Misal: Budi, Sarah, Alex",
+                            placeholder: if is_expense { "Misal: Langganan SaaS, Pajak, Hobi" } else { "Misal: Dividen, Saham, Hibah" },
                             value: "{name}",
                             oninput: move |e| {
                                 name.set(e.value());
                                 error_msg.set(None);
                             },
                             autofocus: true,
-                        }
-                        p { class: "text-[11px] text-[var(--text-muted)] mt-1.5",
-                            "Nama ini ditampilkan di banner ringkasan Dashboard harian Anda."
-                        }
-                    }
-
-                    div { class: "p-3 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-surface-subtle)] flex items-start gap-2.5 mb-5",
-                        div { class: "text-[var(--text-muted)] mt-0.5 shrink-0",
-                            IconShield { size: "15" }
-                        }
-                        div { class: "text-xs text-[var(--text-secondary)] leading-relaxed",
-                            "Nama Anda tersimpan 100% secara privat di penyimpanan lokal peramban perangkat ini."
                         }
                     }
 
@@ -138,7 +152,7 @@ pub fn ProfileModal(
                             r#type: "submit",
                             class: "btn-primary py-2 px-4 text-xs flex items-center gap-1.5",
                             IconCheck { size: "14" }
-                            "Simpan Perubahan"
+                            if is_edit { "Simpan Perubahan" } else { "Simpan Kategori" }
                         }
                     }
                 }

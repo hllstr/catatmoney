@@ -1543,6 +1543,24 @@ input[type="time"]::-webkit-calendar-picker-indicator:hover {
   }
 }
 
+.modal-backdrop.modal-closing {
+  animation: modalBackdropFadeOut 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
+  pointer-events: none;
+}
+
+@keyframes modalBackdropFadeOut {
+  from {
+    opacity: 1;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+  to {
+    opacity: 0;
+    backdrop-filter: blur(0px);
+    -webkit-backdrop-filter: blur(0px);
+  }
+}
+
 .modal-dialog {
   background: var(--bg-surface);
   border: 1px solid var(--border-subtle);
@@ -1557,6 +1575,11 @@ input[type="time"]::-webkit-calendar-picker-indicator:hover {
   will-change: transform, opacity;
 }
 
+.modal-dialog.modal-closing {
+  animation: modalDialogPopOut 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
+  pointer-events: none;
+}
+
 @keyframes modalDialogPopIn {
   from {
     opacity: 0;
@@ -1565,6 +1588,17 @@ input[type="time"]::-webkit-calendar-picker-indicator:hover {
   to {
     opacity: 1;
     transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes modalDialogPopOut {
+  from {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: scale(0.94) translateY(14px);
   }
 }
 
@@ -2802,6 +2836,11 @@ input[type="time"]::-webkit-calendar-picker-indicator:hover {
     will-change: transform, opacity;
   }
 
+  .modal-dialog.modal-closing {
+    animation: modalBottomSheetSlideDown 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
+    pointer-events: none;
+  }
+
   @keyframes modalBottomSheetSlideUp {
     from {
       opacity: 0.4;
@@ -2810,6 +2849,17 @@ input[type="time"]::-webkit-calendar-picker-indicator:hover {
     to {
       opacity: 1;
       transform: translateY(0);
+    }
+  }
+
+  @keyframes modalBottomSheetSlideDown {
+    from {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    to {
+      opacity: 0.2;
+      transform: translateY(100%);
     }
   }
 

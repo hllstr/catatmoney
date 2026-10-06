@@ -1,4 +1,5 @@
 use dioxus::prelude::*;
+use crate::audio::sleep_ms;
 use crate::components::icons::{
     IconArrowDownRight, IconArrowLeftRight, IconArrowRight, IconArrowUpRight, IconCalendar,
     IconClock, IconPaperclip, IconPlus, IconWallet, IconX,
@@ -144,87 +145,124 @@ pub fn TransactionModal(
             .and_then(|t| t.attachment_data.clone())
     });
     let mut error_msg = use_signal(|| None::<String>);
+    let mut is_closing = use_signal(|| false);
 
-    let handle_submit = move |evt: FormEvent| {
-        evt.prevent_default();
-
-        let t = title.read().trim().to_string();
-        if t.is_empty() {
-            error_msg.set(Some("Deskripsi transaksi wajib diisi.".to_string()));
-            return;
+    let handle_close = {
+        let on_close = on_close.clone();
+        move || {
+            if *is_closing.read() {
+                return;
+            }
+            is_closing.set(true);
+            spawn(async move {
+                sleep_ms(220).await;
+                is_closing.set(false);
+                on_close.call(());
+            });
         }
-
-        let a = *amount_raw.read();
-        if a <= 0.0 {
-            error_msg.set(Some("Nominal uang harus lebih besar dari 0.".to_string()));
-            return;
-        }
-
-        let current_type = *trx_type.read();
-        let from_w = wallet.read().trim().to_string();
-        let dest_w = to_wallet.read().trim().to_string();
-
-        if current_type == TransactionType::Transfer && from_w == dest_w {
-            error_msg.set(Some("Akun asal dan akun tujuan tidak boleh sama.".to_string()));
-            return;
-        }
-
-        let d = date.read().trim().to_string();
-        if d.is_empty() {
-            error_msg.set(Some("Tanggal transaksi wajib ditentukan.".to_string()));
-            return;
-        }
-
-        let tm = time.read().trim().to_string();
-        let time_val = if tm.is_empty() { get_current_time_hm() } else { tm };
-
-        let cat_val = if current_type == TransactionType::Transfer {
-            "Transfer Internal".to_string()
-        } else {
-            category.read().clone()
-        };
-
-        let target_to_wallet = if current_type == TransactionType::Transfer {
-            Some(dest_w)
-        } else {
-            None
-        };
-
-        let target_admin_fee = if current_type == TransactionType::Transfer {
-            let fee = *admin_fee_raw.read();
-            if fee > 0.0 { Some(fee) } else { None }
-        } else {
-            None
-        };
-
-        let target_id = edit_id.clone().unwrap_or_else(generate_id);
-
-        let saved_trx = Transaction {
-            id: target_id,
-            title: t,
-            amount: a,
-            transaction_type: current_type,
-            category: cat_val,
-            wallet: from_w,
-            to_wallet: target_to_wallet,
-            admin_fee: target_admin_fee,
-            date: d,
-            time: time_val,
-            notes: notes.read().trim().to_string(),
-            attachment_name: attachment_name.read().clone(),
-            attachment_size: attachment_size.read().clone(),
-            attachment_data: attachment_data.read().clone(),
-        };
-
-        on_save.call(saved_trx);
-        on_close.call(());
     };
+
+    let handle_submit = {
+        let on_save = on_save.clone();
+        let on_close = on_close.clone();
+        move |evt: FormEvent| {
+            evt.prevent_default();
+
+            let t = title.read().trim().to_string();
+            if t.is_empty() {
+                error_msg.set(Some("Deskripsi transaksi wajib diisi.".to_string()));
+                return;
+            }
+
+            let a = *amount_raw.read();
+            if a <= 0.0 {
+                error_msg.set(Some("Nominal uang harus lebih besar dari 0.".to_string()));
+                return;
+            }
+
+            let current_type = *trx_type.read();
+            let from_w = wallet.read().trim().to_string();
+            let dest_w = to_wallet.read().trim().to_string();
+
+            if current_type == TransactionType::Transfer && from_w == dest_w {
+                error_msg.set(Some("Akun asal dan akun tujuan tidak boleh sama.".to_string()));
+                return;
+            }
+
+            let d = date.read().trim().to_string();
+            if d.is_empty() {
+                error_msg.set(Some("Tanggal transaksi wajib ditentukan.".to_string()));
+                return;
+            }
+
+            let tm = time.read().trim().to_string();
+            let time_val = if tm.is_empty() { get_current_time_hm() } else { tm };
+
+            let cat_val = if current_type == TransactionType::Transfer {
+                "Transfer Internal".to_string()
+            } else {
+                category.read().clone()
+            };
+
+            let target_to_wallet = if current_type == TransactionType::Transfer {
+                Some(dest_w)
+            } else {
+                None
+            };
+
+            let target_admin_fee = if current_type == TransactionType::Transfer {
+                let fee = *admin_fee_raw.read();
+                if fee > 0.0 { Some(fee) } else { None }
+            } else {
+                None
+            };
+
+            let target_id = edit_id.clone().unwrap_or_else(generate_id);
+
+            let saved_trx = Transaction {
+                id: target_id,
+                title: t,
+                amount: a,
+                transaction_type: current_type,
+                category: cat_val,
+                wallet: from_w,
+                to_wallet: target_to_wallet,
+                admin_fee: target_admin_fee,
+                date: d,
+                time: time_val,
+                notes: notes.read().trim().to_string(),
+                attachment_name: attachment_name.read().clone(),
+                attachment_size: attachment_size.read().clone(),
+                attachment_data: attachment_data.read().clone(),
+            };
+
+            if *is_closing.read() {
+                return;
+            }
+            is_closing.set(true);
+            let on_save = on_save.clone();
+            let on_close = on_close.clone();
+            spawn(async move {
+                on_save.call(saved_trx);
+                sleep_ms(220).await;
+                is_closing.set(false);
+                on_close.call(());
+            });
+        }
+    };
+
+    let closing_class = if *is_closing.read() { "modal-closing" } else { "" };
 
     rsx! {
         // Modal Backdrop
-        div { class: "modal-backdrop", onclick: move |_| on_close.call(()),
+        div {
+            class: "modal-backdrop {closing_class}",
+            onclick: {
+                let mut close_fn = handle_close.clone();
+                move |_| close_fn()
+            },
             div {
-                class: "modal-dialog",
+                class: "modal-dialog {closing_class}",
                 onclick: move |e| e.stop_propagation(),
 
                 div { class: "modal-header",
@@ -239,7 +277,10 @@ pub fn TransactionModal(
                     button {
                         r#type: "button",
                         class: "btn-icon-close",
-                        onclick: move |_| on_close.call(()),
+                        onclick: {
+                            let mut close_fn = handle_close.clone();
+                            move |_| close_fn()
+                        },
                         IconX { size: "18" }
                     }
                 }
@@ -645,7 +686,10 @@ pub fn TransactionModal(
                         button {
                             r#type: "button",
                             class: "btn-secondary text-xs sm:text-sm py-2 px-3",
-                            onclick: move |_| on_close.call(()),
+                            onclick: {
+                                let mut close_fn = handle_close.clone();
+                                move |_| close_fn()
+                            },
                             "Batal"
                         }
                         button {

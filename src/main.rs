@@ -231,8 +231,6 @@ pub fn App() -> Element {
             list.insert(0, saved_trx);
         }
         save_transactions(&list);
-        editing_trx.set(None);
-        is_modal_open.set(false);
         if is_edit {
             trigger_toast("Perubahan transaksi berhasil diperbarui".to_string(), ToastType::Success);
         } else {
@@ -256,7 +254,6 @@ pub fn App() -> Element {
         let mut list = wallets.write();
         list.push(new_w);
         save_wallets(&list);
-        is_wallet_modal_open.set(false);
         show_toast(format!("Sumber dana \"{}\" berhasil ditambahkan", name), ToastType::Success, Some(SoundEffect::Coin));
     };
 
@@ -724,7 +721,6 @@ pub fn App() -> Element {
                             current.name = new_name;
                             save_profile(&current);
                             profile.set(Some(current));
-                            is_profile_modal_open.set(false);
                             trigger_toast("Nama profil berhasil diperbarui".to_string(), ToastType::Success);
                         },
                     }
