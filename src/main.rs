@@ -16,7 +16,7 @@ use components::detail_modal::DetailModal;
 use components::form_modal::TransactionModal;
 use components::history::TransactionHistory;
 use components::ai_copilot::AiCopilotView;
-use components::icons::{IconEye, IconEyeOff, IconUser, IconWallet};
+use components::icons::{IconEye, IconEyeOff, IconHeart, IconUser, IconWallet};
 use components::management::ManagementView;
 use components::onboarding::OnboardingWizard;
 use components::profile_modal::ProfileModal;
@@ -671,7 +671,11 @@ pub fn App() -> Element {
 
                     // Footer Minimalis
                     footer { class: "app-footer",
-                        p { "CatatMoney • Monochrome Swiss FinTech • Tailwind CSS & Dioxus 0.7" }
+                        p { class: "flex items-center justify-center gap-1.5 text-xs text-[var(--text-muted)]",
+                            "Made with "
+                            IconHeart { size: "13", class: "text-rose-500 fill-rose-500 inline-block align-middle" }
+                            " by Gemini"
+                        }
                     }
                 }
 

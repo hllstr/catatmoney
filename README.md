@@ -11,6 +11,8 @@
 
 Live Application: [https://hllstr.github.io/catatmoney/](https://hllstr.github.io/catatmoney/)
 
+> *Note on Development: CatatMoney is deeply vibe-coded — shaped through an exploratory, conversational human-AI pair programming flow with Gemini. Instead of rigid upfront specifications, the entire project (from procedural Web Audio synthesis and fluid UI micro-interactions to multi-wallet reconciliation and client-side cryptography) was iteratively architected on the fly. By steering intuitive product vision with Rust's strict compile-time type safety and WebAssembly performance, CatatMoney showcases how vibe coding can produce robust, production-grade craft.*
+
 ---
 
 ## Table of Contents
