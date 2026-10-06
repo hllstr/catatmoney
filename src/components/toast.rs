@@ -15,6 +15,7 @@ pub struct ToastItem {
     pub id: u64,
     pub message: String,
     pub toast_type: ToastType,
+    pub is_exiting: bool,
 }
 
 #[component]
@@ -37,10 +38,11 @@ pub fn ToastContainer(
                         ToastType::Warning => "toast-warning",
                         ToastType::Error => "toast-error",
                     };
+                    let exit_class = if toast.is_exiting { "toast-exiting" } else { "" };
 
                     rsx! {
                         div {
-                            class: "toast-item {type_class}",
+                            class: "toast-item {type_class} {exit_class}",
                             key: "{tid}",
                             div { class: "toast-icon-box",
                                 match toast.toast_type {

@@ -1518,13 +1518,29 @@ input[type="time"]::-webkit-calendar-picker-indicator:hover {
 .modal-backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.65);
-  backdrop-filter: blur(4px);
+  background: rgba(0, 0, 0, 0.68);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   z-index: 100;
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 1rem;
+  animation: modalBackdropFadeIn 0.28s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  will-change: opacity, backdrop-filter;
+}
+
+@keyframes modalBackdropFadeIn {
+  from {
+    opacity: 0;
+    backdrop-filter: blur(0px);
+    -webkit-backdrop-filter: blur(0px);
+  }
+  to {
+    opacity: 1;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
 }
 
 .modal-dialog {
@@ -1536,7 +1552,20 @@ input[type="time"]::-webkit-calendar-picker-indicator:hover {
   max-height: 90vh;
   overflow-y: auto;
   padding: 1.75rem;
-  box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 24px 48px -12px rgba(0, 0, 0, 0.55), 0 8px 16px -4px rgba(0, 0, 0, 0.3);
+  animation: modalDialogPopIn 0.28s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  will-change: transform, opacity;
+}
+
+@keyframes modalDialogPopIn {
+  from {
+    opacity: 0;
+    transform: scale(0.94) translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
 }
 
 /* Centered Modal Backdrop Variant (Mobile & Desktop) */
@@ -1553,7 +1582,7 @@ input[type="time"]::-webkit-calendar-picker-indicator:hover {
   border-bottom: 1px solid var(--border-subtle) !important;
   margin: auto !important;
   max-height: 90vh !important;
-  animation: fadeInApp 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  animation: modalDialogPopIn 0.28s cubic-bezier(0.16, 1, 0.3, 1) !important;
 }
 
 .modal-header {
@@ -2767,19 +2796,20 @@ input[type="time"]::-webkit-calendar-picker-indicator:hover {
     border-radius: 20px 20px 0 0;
     max-height: 88vh;
     padding: 1.25rem 1.15rem 1.75rem;
-    box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.4);
+    box-shadow: 0 -12px 48px rgba(0, 0, 0, 0.55);
     border-bottom: none;
-    animation: slideUpModal 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    animation: modalBottomSheetSlideUp 0.32s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    will-change: transform, opacity;
   }
 
-  @keyframes slideUpModal {
+  @keyframes modalBottomSheetSlideUp {
     from {
-      transform: translateY(30px);
-      opacity: 0.85;
+      opacity: 0.4;
+      transform: translateY(100%);
     }
     to {
-      transform: translateY(0);
       opacity: 1;
+      transform: translateY(0);
     }
   }
 
@@ -3179,20 +3209,56 @@ input[type="time"]::-webkit-calendar-picker-indicator:hover {
   background: var(--bg-surface);
   border: 1px solid var(--border-subtle);
   border-radius: 12px;
-  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.45), 0 4px 10px -2px rgba(0, 0, 0, 0.2);
-  backdrop-filter: blur(12px);
-  animation: toastSlideIn 0.22s cubic-bezier(0.16, 1, 0.3, 1);
-  transition: transform 0.15s ease, opacity 0.15s ease;
+  box-shadow: 0 14px 34px -4px rgba(0, 0, 0, 0.5), 0 4px 12px -2px rgba(0, 0, 0, 0.25);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  animation: toastSlideIn 0.28s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  will-change: transform, opacity, max-height, margin;
+  overflow: hidden;
+  max-height: 90px;
+}
+
+.toast-item.toast-exiting {
+  animation: toastSlideOut 0.26s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  pointer-events: none;
 }
 
 @keyframes toastSlideIn {
-  from {
+  0% {
     opacity: 0;
-    transform: translateY(-10px) scale(0.96);
+    transform: translateY(-16px) scale(0.92);
   }
-  to {
+  70% {
+    opacity: 1;
+    transform: translateY(2px) scale(1.01);
+  }
+  100% {
     opacity: 1;
     transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes toastSlideOut {
+  0% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    max-height: 90px;
+    margin-bottom: 0.5rem;
+    padding-top: 0.75rem;
+    padding-bottom: 0.75rem;
+  }
+  50% {
+    opacity: 0;
+    transform: translateY(-8px) scale(0.94);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-12px) scale(0.88);
+    max-height: 0;
+    margin-bottom: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+    border-color: transparent;
   }
 }
 
@@ -3255,6 +3321,62 @@ input[type="time"]::-webkit-calendar-picker-indicator:hover {
 .toast-close-btn:hover {
   color: var(--text-primary);
   background: var(--bg-surface-subtle);
+}
+
+.toast-close-btn:active {
+  transform: scale(0.86);
+}
+
+/* Tactile Press Micro-Interactions (Mechanical Spring Feel) */
+button,
+.btn-primary,
+.btn-secondary,
+.btn-danger,
+.btn-ghost,
+.filter-pill,
+.timeframe-pill,
+.dock-item,
+.dock-add-btn,
+.theme-card,
+.transaction-row,
+.quick-action-btn,
+.tab-btn {
+  -webkit-tap-highlight-color: transparent;
+}
+
+button:active:not(:disabled),
+.btn-primary:active:not(:disabled),
+.btn-secondary:active:not(:disabled),
+.btn-danger:active:not(:disabled),
+.btn-ghost:active:not(:disabled) {
+  transform: scale(0.965);
+  transition: transform 0.08s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.filter-pill:active,
+.timeframe-pill:active {
+  transform: scale(0.94);
+  transition: transform 0.08s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.dock-item:active {
+  transform: scale(0.88);
+  transition: transform 0.08s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.dock-add-btn:active {
+  transform: scale(0.88);
+  transition: transform 0.08s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.theme-card:active {
+  transform: scale(0.96);
+  transition: transform 0.08s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.transaction-row:active {
+  transform: scale(0.985);
+  transition: transform 0.08s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 

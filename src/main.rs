@@ -182,6 +182,7 @@ pub fn App() -> Element {
             id: tid,
             message: msg,
             toast_type,
+            is_exiting: false,
         });
 
         let sfx = custom_sfx.unwrap_or_else(|| match toast_type {
@@ -192,7 +193,22 @@ pub fn App() -> Element {
         play_sound(sfx, *sound_enabled.read());
 
         spawn(async move {
-            sleep_ms(3200).await;
+            // Tampilkan toast selama 2800ms
+            sleep_ms(2800).await;
+            // Tandai toast sedang keluar (trigger animasi slide-out)
+            {
+                let mut list = toasts_sig.write();
+                if let Some(item) = list.iter_mut().find(|t| t.id == tid) {
+                    if item.is_exiting {
+                        return;
+                    }
+                    item.is_exiting = true;
+                } else {
+                    return;
+                }
+            }
+            // Tunggu animasi slide-out selesai (260ms)
+            sleep_ms(260).await;
             let mut list = toasts_sig.write();
             if let Some(pos) = list.iter().position(|t| t.id == tid) {
                 list.remove(pos);
@@ -821,7 +837,24 @@ pub fn App() -> Element {
                 toasts: toasts.read().clone(),
                 on_dismiss: move |id| {
                     let mut toasts_sig = toasts;
-                    toasts_sig.write().retain(|t| t.id != id);
+                    {
+                        let mut list = toasts_sig.write();
+                        if let Some(item) = list.iter_mut().find(|t| t.id == id) {
+                            if item.is_exiting {
+                                return;
+                            }
+                            item.is_exiting = true;
+                        } else {
+                            return;
+                        }
+                    }
+                    spawn(async move {
+                        sleep_ms(260).await;
+                        let mut list = toasts_sig.write();
+                        if let Some(pos) = list.iter().position(|t| t.id == id) {
+                            list.remove(pos);
+                        }
+                    });
                 },
             }
         }
